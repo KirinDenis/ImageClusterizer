@@ -1,0 +1,242 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "C:\\Source\\Repos\\ImageClusterizer\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{A41510A4-761E-4C35-8796-8FDF0C287163}|ImageClusterizer\\ImageClusterizer.csproj|c:\\source\\repos\\imageclusterizer\\imageclusterizer\\views\\mainwindow.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A41510A4-761E-4C35-8796-8FDF0C287163}|ImageClusterizer\\ImageClusterizer.csproj|solutionrelative:imageclusterizer\\views\\mainwindow.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A41510A4-761E-4C35-8796-8FDF0C287163}|ImageClusterizer\\ImageClusterizer.csproj|c:\\source\\repos\\imageclusterizer\\imageclusterizer\\services\\litedbvectorstore.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A41510A4-761E-4C35-8796-8FDF0C287163}|ImageClusterizer\\ImageClusterizer.csproj|solutionrelative:imageclusterizer\\services\\litedbvectorstore.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A41510A4-761E-4C35-8796-8FDF0C287163}|ImageClusterizer\\ImageClusterizer.csproj|c:\\source\\repos\\imageclusterizer\\imageclusterizer\\services\\resnetvectorizer.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A41510A4-761E-4C35-8796-8FDF0C287163}|ImageClusterizer\\ImageClusterizer.csproj|solutionrelative:imageclusterizer\\services\\resnetvectorizer.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A41510A4-761E-4C35-8796-8FDF0C287163}|ImageClusterizer\\ImageClusterizer.csproj|c:\\source\\repos\\imageclusterizer\\imageclusterizer\\services\\imagescanner.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A41510A4-761E-4C35-8796-8FDF0C287163}|ImageClusterizer\\ImageClusterizer.csproj|solutionrelative:imageclusterizer\\services\\imagescanner.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Source\\Repos\\ImageClusterizer\\ImageClusterizer\\obj\\x64\\Debug\\net8.0-windows10.0.19041.0\\win-x64\\App.g.i.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:ImageClusterizer\\obj\\x64\\Debug\\net8.0-windows10.0.19041.0\\win-x64\\App.g.i.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A41510A4-761E-4C35-8796-8FDF0C287163}|ImageClusterizer\\ImageClusterizer.csproj|c:\\source\\repos\\imageclusterizer\\imageclusterizer\\viewmodels\\mainviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A41510A4-761E-4C35-8796-8FDF0C287163}|ImageClusterizer\\ImageClusterizer.csproj|solutionrelative:imageclusterizer\\viewmodels\\mainviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 33,
+          "Children": [
+            {
+              "$type": "Bookmark",
+              "Name": "ST:141:0:{1fc202d4-d401-403c-9834-5b218574bb67}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:142:0:{1fc202d4-d401-403c-9834-5b218574bb67}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:143:0:{1fc202d4-d401-403c-9834-5b218574bb67}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:146:0:{1fc202d4-d401-403c-9834-5b218574bb67}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:147:0:{116d2292-e37d-41cd-a077-ebacac4c8cc4}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:150:0:{1fc202d4-d401-403c-9834-5b218574bb67}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:148:0:{1fc202d4-d401-403c-9834-5b218574bb67}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:149:0:{1fc202d4-d401-403c-9834-5b218574bb67}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:135:0:{1fc202d4-d401-403c-9834-5b218574bb67}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:128:0:{1fc202d4-d401-403c-9834-5b218574bb67}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:136:0:{13b12e3e-c1b4-4539-9371-4fe9a0d523fc}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:138:0:{13b12e3e-c1b4-4539-9371-4fe9a0d523fc}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:143:0:{13b12e3e-c1b4-4539-9371-4fe9a0d523fc}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:142:0:{13b12e3e-c1b4-4539-9371-4fe9a0d523fc}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:141:0:{13b12e3e-c1b4-4539-9371-4fe9a0d523fc}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:137:0:{13b12e3e-c1b4-4539-9371-4fe9a0d523fc}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:139:0:{116d2292-e37d-41cd-a077-ebacac4c8cc4}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:140:0:{13b12e3e-c1b4-4539-9371-4fe9a0d523fc}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:145:0:{13b12e3e-c1b4-4539-9371-4fe9a0d523fc}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:149:0:{13b12e3e-c1b4-4539-9371-4fe9a0d523fc}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:150:0:{13b12e3e-c1b4-4539-9371-4fe9a0d523fc}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:133:0:{13b12e3e-c1b4-4539-9371-4fe9a0d523fc}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:133:0:{116d2292-e37d-41cd-a077-ebacac4c8cc4}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{eefa5220-e298-11d0-8f78-00a0c9110057}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{3ae79031-e1bc-11d0-8f78-00a0c9110057}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:131:0:{13b12e3e-c1b4-4539-9371-4fe9a0d523fc}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:133:0:{1fc202d4-d401-403c-9834-5b218574bb67}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:131:0:{1fc202d4-d401-403c-9834-5b218574bb67}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{aa2115a1-9712-457b-9047-dbb71ca2cdd2}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{1c64b9c2-e352-428e-a56d-0ace190b99a6}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "LiteDbVectorStore.cs",
+              "DocumentMoniker": "C:\\Source\\Repos\\ImageClusterizer\\ImageClusterizer\\Services\\LiteDbVectorStore.cs",
+              "RelativeDocumentMoniker": "ImageClusterizer\\Services\\LiteDbVectorStore.cs",
+              "ToolTip": "C:\\Source\\Repos\\ImageClusterizer\\ImageClusterizer\\Services\\LiteDbVectorStore.cs",
+              "RelativeToolTip": "ImageClusterizer\\Services\\LiteDbVectorStore.cs",
+              "ViewState": "AgIAACYAAAAAAAAAAAAwwAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-01-20T14:58:44.015Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "ImageScanner.cs",
+              "DocumentMoniker": "C:\\Source\\Repos\\ImageClusterizer\\ImageClusterizer\\Services\\ImageScanner.cs",
+              "RelativeDocumentMoniker": "ImageClusterizer\\Services\\ImageScanner.cs",
+              "ToolTip": "C:\\Source\\Repos\\ImageClusterizer\\ImageClusterizer\\Services\\ImageScanner.cs",
+              "RelativeToolTip": "ImageClusterizer\\Services\\ImageScanner.cs",
+              "ViewState": "AgIAAAEAAAAAAAAAAAAUwBQAAAAIAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-01-20T14:28:46.421Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "ResNetVectorizer.cs",
+              "DocumentMoniker": "C:\\Source\\Repos\\ImageClusterizer\\ImageClusterizer\\Services\\ResNetVectorizer.cs",
+              "RelativeDocumentMoniker": "ImageClusterizer\\Services\\ResNetVectorizer.cs",
+              "ToolTip": "C:\\Source\\Repos\\ImageClusterizer\\ImageClusterizer\\Services\\ResNetVectorizer.cs",
+              "RelativeToolTip": "ImageClusterizer\\Services\\ResNetVectorizer.cs",
+              "ViewState": "AgIAACoAAAAAAAAAAAAowBoAAAADAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-01-20T14:27:16.99Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "MainWindow.xaml.cs",
+              "DocumentMoniker": "C:\\Source\\Repos\\ImageClusterizer\\ImageClusterizer\\Views\\MainWindow.xaml.cs",
+              "RelativeDocumentMoniker": "ImageClusterizer\\Views\\MainWindow.xaml.cs",
+              "ToolTip": "C:\\Source\\Repos\\ImageClusterizer\\ImageClusterizer\\Views\\MainWindow.xaml.cs",
+              "RelativeToolTip": "ImageClusterizer\\Views\\MainWindow.xaml.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAoAAAAXAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-01-20T14:25:13.056Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "App.g.i.cs",
+              "DocumentMoniker": "C:\\Source\\Repos\\ImageClusterizer\\ImageClusterizer\\obj\\x64\\Debug\\net8.0-windows10.0.19041.0\\win-x64\\App.g.i.cs",
+              "RelativeDocumentMoniker": "ImageClusterizer\\obj\\x64\\Debug\\net8.0-windows10.0.19041.0\\win-x64\\App.g.i.cs",
+              "ToolTip": "C:\\Source\\Repos\\ImageClusterizer\\ImageClusterizer\\obj\\x64\\Debug\\net8.0-windows10.0.19041.0\\win-x64\\App.g.i.cs",
+              "RelativeToolTip": "ImageClusterizer\\obj\\x64\\Debug\\net8.0-windows10.0.19041.0\\win-x64\\App.g.i.cs",
+              "ViewState": "AgIAADEAAAAAAAAAAAAUwEQAAABEAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-01-20T14:13:02.578Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "MainViewModel.cs",
+              "DocumentMoniker": "C:\\Source\\Repos\\ImageClusterizer\\ImageClusterizer\\ViewModels\\MainViewModel.cs",
+              "RelativeDocumentMoniker": "ImageClusterizer\\ViewModels\\MainViewModel.cs",
+              "ToolTip": "C:\\Source\\Repos\\ImageClusterizer\\ImageClusterizer\\ViewModels\\MainViewModel.cs",
+              "RelativeToolTip": "ImageClusterizer\\ViewModels\\MainViewModel.cs",
+              "ViewState": "AgIAAFEAAAAAAAAAAAAswFIAAAAMAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-01-20T14:12:12.311Z",
+              "EditorCaption": ""
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
