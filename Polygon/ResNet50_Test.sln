@@ -1,9 +1,11 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
-VisualStudioVersion = 17.14.36908.2 d17.14
+VisualStudioVersion = 17.14.36908.2
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ResNet50_Test", "ResNet50_Test\ResNet50_Test.csproj", "{0E061DDF-2D58-464A-9B7D-98DFA7827371}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BindingTest", "BindingTest\BindingTest.csproj", "{83985C7B-D94F-425F-A3F9-94CF9354AE09}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +17,12 @@ Global
 		{0E061DDF-2D58-464A-9B7D-98DFA7827371}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0E061DDF-2D58-464A-9B7D-98DFA7827371}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0E061DDF-2D58-464A-9B7D-98DFA7827371}.Release|Any CPU.Build.0 = Release|Any CPU
+		{83985C7B-D94F-425F-A3F9-94CF9354AE09}.Debug|Any CPU.ActiveCfg = Debug|x64
+		{83985C7B-D94F-425F-A3F9-94CF9354AE09}.Debug|Any CPU.Build.0 = Debug|x64
+		{83985C7B-D94F-425F-A3F9-94CF9354AE09}.Debug|Any CPU.Deploy.0 = Debug|x64
+		{83985C7B-D94F-425F-A3F9-94CF9354AE09}.Release|Any CPU.ActiveCfg = Release|x64
+		{83985C7B-D94F-425F-A3F9-94CF9354AE09}.Release|Any CPU.Build.0 = Release|x64
+		{83985C7B-D94F-425F-A3F9-94CF9354AE09}.Release|Any CPU.Deploy.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

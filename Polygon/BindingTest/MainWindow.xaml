@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Window
+    x:Class="BindingTest.MainWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:BindingTest"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    Title="BindingTest">
+
+    <Window.SystemBackdrop>
+        <MicaBackdrop />
+    </Window.SystemBackdrop>
+
+    <Grid>
+        <StackPanel>
+        <TextBlock VerticalAlignment="Top">
+            <Run Text="Somthing run" />
+            <Run Text="{x:Bind ViewModel.SomethingRun, Mode=OneWay}" />
+        </TextBlock>
+
+        <TextBlock VerticalAlignment="Top">
+            <Run Text="Somthing run" />
+            <Run Text="{x:Bind ViewModel.SomethingRun2, Mode=OneWay}" />
+        </TextBlock>
+        </StackPanel>
+
+    </Grid>
+</Window>

@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "BindingTest (Package)": {
+      "commandName": "MsixPackage"
+    },
+    "BindingTest (Unpackaged)": {
+      "commandName": "Project"
+    }
+  }
+}
