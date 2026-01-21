@@ -17,13 +17,16 @@
         <StackPanel>
         <TextBlock VerticalAlignment="Top">
             <Run Text="Somthing run" />
-            <Run Text="{x:Bind ViewModel.SomethingRun, Mode=OneWay}" />
+            <Run Text="{x:Bind ViewModel.SomethingRun, Mode=OneTime}" />
         </TextBlock>
 
         <TextBlock VerticalAlignment="Top">
             <Run Text="Somthing run" />
             <Run Text="{x:Bind ViewModel.SomethingRun2, Mode=OneWay}" />
         </TextBlock>
+
+        <TextBox VerticalAlignment="Top" Text="{x:Bind ViewModel.SomethingRun2, Mode=TwoWay}" />
+
         </StackPanel>
 
     </Grid>
