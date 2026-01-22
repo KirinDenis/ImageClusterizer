@@ -41,14 +41,18 @@ namespace ImageClusterizer
 
             services.AddSingleton<IVectorDatabase>(sp =>
             {
+                //var dbPath = System.IO.Path.Combine(
+                //  Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                //"ImageClusterizer",
+                //"vectors.db");
+
+                //System.IO.Directory.CreateDirectory(
+                //System.IO.Path.GetDirectoryName(dbPath));
+
                 var dbPath = System.IO.Path.Combine(
-                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                    "ImageClusterizer",
+                    AppContext.BaseDirectory,
                     "vectors.db");
 
-                // Создаём папку если нет
-                System.IO.Directory.CreateDirectory(
-                    System.IO.Path.GetDirectoryName(dbPath));
 
                 return new LiteDbVectorStore(dbPath);
             });
