@@ -6,6 +6,7 @@
     xmlns:local="using:ImageClusterizer"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:models="using:ImageClusterizer.Models"
     mc:Ignorable="d"
     Title="AI :: Image Clusterizer">
 
@@ -30,12 +31,70 @@
             <AppBarButton
                  Icon="Stop"
                  Label="Stop scaning"
+                Command="{x:Bind ViewModel.CancelScanCommand}"
                 />
             <AppBarButton
                  Icon="Refresh"
                  Label="Reload exists from database"
+                Command="{x:Bind ViewModel.LoadExistingClustersCommand}"
                 />
         </CommandBar>
+
+        <StackPanel Grid.Row="1" Padding="20" Spacing="10"
+                    Visibility="{x:Bind ViewModel.ProgressVisibility, Mode=OneWay}">
+            <TextBlock>
+				<Run Text="Processing: "/>
+				<Run Text="{x:Bind ViewModel.CurrentFile, Mode=OneWay}"/>
+            </TextBlock>
+            <ProgressBar
+                Value="{x:Bind ViewModel.Progress, Mode=OneWay}"
+                Maximum="100"/>
+            <TextBlock>
+				<Run Text="{x:Bind ViewModel.ProcessedCountText, Mode=OneWay}"/>
+				<Run Text=" / "/>
+				<Run Text="{x:Bind ViewModel.TotalCountText, Mode=OneWay}"/>
+				<Run Text=" images processed"/>
+            </TextBlock>
+        </StackPanel>
+
+        <GridView
+            Grid.Row="2"
+            ItemsSource="{x:Bind ViewModel.Clusters, Mode=OneWay}"
+            Padding="20">
+            <GridView.ItemTemplate>
+                <DataTemplate x:DataType="models:ImageCluster">
+                    <Border
+                        Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                        BorderThickness="1"
+                        CornerRadius="8"
+                        Padding="12"
+                        Width="300">
+                        <StackPanel Spacing="8">
+                            <TextBlock
+                                Text="{x:Bind ClusterId}"
+                                Style="{StaticResource SubtitleTextBlockStyle}"/>
+                            <TextBlock Text="{x:Bind Images.Count}"/>
+
+                            <GridView
+                                ItemsSource="{x:Bind Images}"
+                                MaxHeight="200"
+                                SelectionMode="None">
+                                <GridView.ItemTemplate>
+                                    <DataTemplate x:DataType="models:ImageVector">
+                                        <Image
+                                            Source="{x:Bind FilePath}"
+                                            Width="80"
+                                            Height="80"
+                                            Stretch="UniformToFill"/>
+                                    </DataTemplate>
+                                </GridView.ItemTemplate>
+                            </GridView>
+                        </StackPanel>
+                    </Border>
+                </DataTemplate>
+            </GridView.ItemTemplate>
+        </GridView>
 
     </Grid>
 </Window>

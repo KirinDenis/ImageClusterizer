@@ -1,24 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Runtime.InteropServices.WindowsRuntime;
-using ImageClusterizer.Services;
+﻿using ImageClusterizer.Services;
 using ImageClusterizer.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.UI.Xaml;
-using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Controls.Primitives;
-using Microsoft.UI.Xaml.Data;
-using Microsoft.UI.Xaml.Input;
-using Microsoft.UI.Xaml.Media;
-using Microsoft.UI.Xaml.Navigation;
-using Microsoft.UI.Xaml.Shapes;
-using Windows.ApplicationModel;
-using Windows.ApplicationModel.Activation;
-using Windows.Foundation;
-using Windows.Foundation.Collections;
+using System;
 
 
 namespace ImageClusterizer
@@ -46,7 +31,31 @@ namespace ImageClusterizer
 
         private void ConfigureServices(IServiceCollection services)
         {
+            services.AddSingleton<IVectorService>(sp =>
+            {
+                var modelPath = System.IO.Path.Combine(
+                    AppContext.BaseDirectory,
+                    "resnet50-v2-7.onnx");
+                return new ResNetVectorizer(modelPath);
+            });
+
+            services.AddSingleton<IVectorDatabase>(sp =>
+            {
+                var dbPath = System.IO.Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                    "ImageClusterizer",
+                    "vectors.db");
+
+                // Создаём папку если нет
+                System.IO.Directory.CreateDirectory(
+                    System.IO.Path.GetDirectoryName(dbPath));
+
+                return new LiteDbVectorStore(dbPath);
+            });
+
             services.AddTransient<ImageScanner>();
+
+            services.AddTransient<ClusteringService>();
 
             services.AddSingleton<MainViewModel>();
 

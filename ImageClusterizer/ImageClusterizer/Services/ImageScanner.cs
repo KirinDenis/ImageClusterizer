@@ -14,6 +14,15 @@ using System.Threading.Tasks;
 
 public class ImageScanner
 {
+    private readonly IVectorDatabase vectorDatabase;
+
+    private readonly IVectorService vectorService;
+
+    public ImageScanner(IVectorDatabase vectorDatabase, IVectorService vectorService)
+    {
+        this.vectorDatabase = vectorDatabase;
+        this.vectorService = vectorService;
+    }
     public async IAsyncEnumerable<ScanProgress> ScanFolderAsync(string folder, [EnumeratorCancellation] CancellationToken ct = default)
     {
         List<string> imageFiles = null;
@@ -64,7 +73,12 @@ public class ImageScanner
             {
                 if (ct.IsCancellationRequested) break;
 
-                //TODO: Check database exists here
+                //Check database exists here
+                if (await vectorDatabase.ExistsAsync(imageFile))
+                {
+                    Interlocked.Increment(ref processedCount);
+                    continue;
+                }
 
                 await fileChannel.Writer.WriteAsync(imageFile);
             }
@@ -80,16 +94,41 @@ public class ImageScanner
             {
                 await foreach (var imageFile in fileChannel.Reader.ReadAllAsync(ct))
                 {
-                    //TODO: CNN + ResNet here
-
-                    await progressChannel.Writer.WriteAsync(new ScanProgress
+                    try
                     {
-                        CurrentFile = imageFile,
-                        //ProcessedCount 
-                        TotalCount = totalCount,
-                        //NewVector 
-                    }, ct);
+                        // CNN + ResNet here
+                        // Get embedding vector
+                        var vector = await vectorService.GetEmbeddingAsync(imageFile);
 
+                        var imageVector = new ImageVector
+                        {
+                            FilePath = imageFile,
+                            Vector = vector,
+                            ProcessedAt = DateTime.UtcNow,
+                            FileSize = new FileInfo(imageFile).Length
+                        };
+
+                        // Save to DB
+                        await vectorDatabase.SaveAsync(imageVector);
+
+                        var count = Interlocked.Increment(ref processedCount);
+
+
+                        await progressChannel.Writer.WriteAsync(new ScanProgress
+                        {
+                            CurrentFile = imageFile,
+                            ProcessedCount = count,
+                            TotalCount = totalCount,
+                            NewVector = imageVector
+                        }, ct);
+
+                    }
+                    catch (Exception ex)
+                    {
+                        //TODO: remeber select store to data base and skip the files
+                        Debug.WriteLine($"Error processing {imageFile}: {ex.Message}");
+                        continue;
+                    }
                 }
             }, ct))
             .ToArray(); //collect all tasks to array 
