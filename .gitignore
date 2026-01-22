@@ -56,3 +56,4 @@ nunit-*.xml
 /Polygon/ResNet50_Test/resnet50-v2-7.onnx
 /Polygon/.vs/ResNet50_Test/FileContentIndex
 /Polygon/.vs/ResNet50_Test/v17
+/Polygon/.vs
