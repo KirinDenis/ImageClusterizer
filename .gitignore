@@ -57,3 +57,10 @@ nunit-*.xml
 /Polygon/.vs/ResNet50_Test/FileContentIndex
 /Polygon/.vs/ResNet50_Test/v17
 /Polygon/.vs
+*.vsidx
+/ImageClusterizer/.vs/ImageClusterizer/FileContentIndex/1a683dd1-e3ea-4e1f-86bd-a16708eb982d.vsidx
+/ImageClusterizer/.vs/ImageClusterizer/FileContentIndex/744ecfa3-1d34-49a6-8976-a2ac60e4aabd.vsidx
+/ImageClusterizer/.vs/ImageClusterizer/FileContentIndex/f26f78d2-5cb1-4618-a80a-bfc7b6df1c58.vsidx
+/ImageClusterizer/.vs/ImageClusterizer/v17/.suo
+/ImageClusterizer/.vs/ImageClusterizer/v17/DocumentLayout.backup.json
+/ImageClusterizer/.vs/ImageClusterizer/v17/DocumentLayout.json
