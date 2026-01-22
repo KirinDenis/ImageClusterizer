@@ -10,7 +10,7 @@
     Title="ShowImages">
 
     <Window.SystemBackdrop>
-        <MicaBackdrop />
+        <DesktopAcrylicBackdrop/>
     </Window.SystemBackdrop>
 
     <Grid>

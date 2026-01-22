@@ -2,6 +2,7 @@
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml.Controls;
+using System;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
@@ -42,6 +43,8 @@ namespace ShowImages
         public async  Task _Hello()
         {
 
+
+
             var imageFiles = Directory
                 .EnumerateFiles(@"e:\downloads\", "*.jpg", SearchOption.AllDirectories)                
                 .ToList();
@@ -72,5 +75,9 @@ namespace ShowImages
 
         }
 
+        private void IntCol_CollectionChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
+        {
+            Console.WriteLine(e.Action);
+        }
     }
 }

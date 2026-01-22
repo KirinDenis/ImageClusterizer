@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "ImageClusterizer (Package)": {
+      "commandName": "MsixPackage"
+    },
+    "ImageClusterizer (Unpackaged)": {
+      "commandName": "Project"
+    }
+  }
+}

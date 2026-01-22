@@ -1,0 +1,60 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+
+<Package
+  xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
+  xmlns:mp="http://schemas.microsoft.com/appx/2014/phone/manifest"
+  xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
+  xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
+  xmlns:uap18="http://schemas.microsoft.com/appx/manifest/uap/windows10/18"
+  IgnorableNamespaces="uap rescap uap18">
+
+  <Identity
+    Name="dc353d78-7809-48d3-ab5c-f27ed4034038"
+    Publisher="CN=Egor"
+    Version="1.0.0.0" />
+
+  <mp:PhoneIdentity PhoneProductId="dc353d78-7809-48d3-ab5c-f27ed4034038" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>
+
+  <Properties>
+    <DisplayName>ImageClusterizer</DisplayName>
+    <PublisherDisplayName>Egor</PublisherDisplayName>
+    <Logo>Assets\StoreLogo.png</Logo>
+  </Properties>
+
+  <Dependencies>
+    <TargetDeviceFamily Name="Windows.Universal" MinVersion="10.0.17763.0" MaxVersionTested="10.0.19041.0" />
+    <TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.17763.0" MaxVersionTested="10.0.19041.0" />
+  </Dependencies>
+
+  <Resources>
+    <Resource Language="x-generate"/>
+  </Resources>
+
+  <Applications>
+    <Application Id="App"
+      Executable="$targetnametoken$.exe"
+      EntryPoint="$targetentrypoint$" uap18:TrustLevel="mediumIL">
+      <uap:VisualElements
+        DisplayName="Image Clusterizer"
+        Description="This application is based on artificial intelligence and is designed to cluster local image files into categories. It works with images stored on the local disk and processes them locally.
+
+
+The application uses machine learning models to analyze images and group them by visual similarity. It does not require uploading images to external services, which helps to keep user data private.
+The project is open source and distributed under the MIT license.
+The source code is available on GitHub.
+
+https://github.com/KirinDenis/ImageClusterizer"
+        BackgroundColor="transparent"
+        Square150x150Logo="Assets\Square150x150Logo.png"
+        Square44x44Logo="Assets\Square44x44Logo.png">
+        <uap:DefaultTile Wide310x150Logo="Assets\Wide310x150Logo.png" >
+        </uap:DefaultTile >
+        <uap:SplashScreen Image="Assets\SplashScreen.png" />
+      </uap:VisualElements>
+    </Application>
+  </Applications>
+
+  <Capabilities>
+    <rescap:Capability Name="runFullTrust" />
+  </Capabilities>
+</Package>
