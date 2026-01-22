@@ -20,13 +20,21 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <CommandBar Grid.Row="0">
+        <CommandBar Grid.Row="0" HorizontalAlignment="Left">
             <AppBarButton
-                 Icon="OpenFile"/>
+                 Icon="OpenFile"
+                 ToolTipService.ToolTip="Select images"
+                 Label="Select location to scan images"
+                 Command="{x:Bind ViewModel.StartScanImagesCommand}"
+                />
             <AppBarButton
-                 Icon="Stop"/>
+                 Icon="Stop"
+                 Label="Stop scaning"
+                />
             <AppBarButton
-                 Icon="Refresh"/>
+                 Icon="Refresh"
+                 Label="Reload exists from database"
+                />
         </CommandBar>
 
     </Grid>
