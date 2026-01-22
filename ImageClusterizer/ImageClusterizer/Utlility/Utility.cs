@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -26,5 +27,12 @@ namespace ImageClusterizer.Utlility
 
             return await folderPicker.PickSingleFolderAsync();
         }
+
+        public static bool IsImageFile(string filePath)
+        {
+            string extension = Path.GetExtension(filePath).ToLowerInvariant();
+            return extension is ".jpg" or ".jpeg" or ".gif" or ".png" or ".bmp";
+        }
+
     }
 }

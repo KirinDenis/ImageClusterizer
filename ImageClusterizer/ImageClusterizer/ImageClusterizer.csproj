@@ -57,8 +57,11 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.2" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.2" />
     <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.26100.7463" />
     <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.8.260101001" />
+    <PackageReference Include="System.Collections" Version="4.3.0" />
   </ItemGroup>
 
   <!--

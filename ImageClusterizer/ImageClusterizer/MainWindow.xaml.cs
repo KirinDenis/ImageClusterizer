@@ -19,13 +19,16 @@ namespace ImageClusterizer
 {
     public sealed partial class MainWindow : Window
     {
-        public MainViewModel ViewModel { get;}
+        /// <summary>
+        /// The name must be ViewModel for XAML binding
+        /// </summary>
+        public MainViewModel ViewModel { get; private set; }
 
-        public MainWindow()
+        public MainWindow(MainViewModel _viewModel)
         {
             InitializeComponent();
 
-            ViewModel = new MainViewModel();
+            ViewModel = _viewModel;
 
             SetWindowIcon();
         }
