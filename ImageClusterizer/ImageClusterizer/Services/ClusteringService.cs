@@ -1,7 +1,9 @@
 ﻿
 using ImageClusterizer.Models;
+using MathNet.Numerics.LinearAlgebra;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 public class ClusteringService
 {
@@ -84,5 +86,139 @@ public class ClusteringService
         }
 
         return centroid;
+    }
+
+    public List<ClusterPosition> CalculatePositions(
+        List<ImageCluster> clusters,
+        int canvasWidth = 10000,
+        int canvasHeight = 10000)
+    {
+        // Собираем все вектора
+        var allVectors = new List<float[]>();
+        var vectorInfo = new List<VectorInfo>();
+
+        foreach (var cluster in clusters)
+        {
+            if (cluster.Centroid != null)
+            {
+                allVectors.Add(cluster.Centroid);
+                vectorInfo.Add(new VectorInfo
+                {
+                    ClusterId = cluster.ClusterId,
+                    IsCentroid = true,
+                    ImageVector = null
+                });
+            }
+
+            foreach (var image in cluster.Images)
+            {
+                allVectors.Add(image.Vector);
+                vectorInfo.Add(new VectorInfo
+                {
+                    ClusterId = cluster.ClusterId,
+                    IsCentroid = false,
+                    ImageVector = image
+                });
+            }
+        }
+
+        if (allVectors.Count == 0)
+            return new List<ClusterPosition>();
+
+        // PCA reduction
+        var positions2D = ReduceTo2D_PCA(allVectors);
+
+        // Нормализуем
+        var normalized = NormalizePositions(positions2D, canvasWidth, canvasHeight);
+
+        // Результат
+        var result = new List<ClusterPosition>();
+        for (int i = 0; i < normalized.Length; i++)
+        {
+            result.Add(new ClusterPosition
+            {
+                ClusterId = vectorInfo[i].ClusterId,
+                IsCentroid = vectorInfo[i].IsCentroid,
+                ImageVector = vectorInfo[i].ImageVector,
+                X = normalized[i][0],
+                Y = normalized[i][1]
+            });
+        }
+
+        return result;
+    }
+
+    private double[][] ReduceTo2D_PCA(List<float[]> vectors)
+    {
+        int n = vectors.Count;
+        int d = vectors[0].Length;
+
+        // Создаём матрицу
+        var matrixData = new double[n, d];
+        for (int i = 0; i < n; i++)
+        {
+            for (int j = 0; j < d; j++)
+            {
+                matrixData[i, j] = vectors[i][j];
+            }
+        }
+
+        var matrix = Matrix<double>.Build.DenseOfArray(matrixData);
+
+        // Центрируем данные
+        var columnMeans = matrix.ColumnSums() / n;
+        var centered = matrix.Clone();
+
+        for (int i = 0; i < n; i++)
+        {
+            for (int j = 0; j < d; j++)
+            {
+                centered[i, j] -= columnMeans[j];
+            }
+        }
+
+        // SVD
+        var svd = centered.Svd(computeVectors: true);
+        var u = svd.U;
+        var s = svd.S;
+
+        // Берём первые 2 компоненты
+        var result = new double[n][];
+        for (int i = 0; i < n; i++)
+        {
+            result[i] = new double[]
+            {
+                    u[i, 0] * s[0],
+                    u[i, 1] * s[1]
+            };
+        }
+
+        return result;
+    }
+
+    private double[][] NormalizePositions(double[][] positions, int width, int height)
+    {
+        if (positions.Length == 0) return positions;
+
+        var minX = positions.Min(p => p[0]);
+        var maxX = positions.Max(p => p[0]);
+        var minY = positions.Min(p => p[1]);
+        var maxY = positions.Max(p => p[1]);
+
+        var rangeX = maxX - minX;
+        var rangeY = maxY - minY;
+
+        if (rangeX < 0.0001) rangeX = 1;
+        if (rangeY < 0.0001) rangeY = 1;
+
+        var padding = 0.05;
+        var usableWidth = width * (1 - 2 * padding);
+        var usableHeight = height * (1 - 2 * padding);
+
+        return positions.Select(p => new[]
+        {
+                (p[0] - minX) / rangeX * usableWidth + width * padding,
+                (p[1] - minY) / rangeY * usableHeight + height * padding
+            }).ToArray();
     }
 }
