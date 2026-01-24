@@ -66,3 +66,4 @@ nunit-*.xml
 /ImageClusterizer/.vs/ImageClusterizer/v17/DocumentLayout.json
 /ImageClusterizer/.vs/ImageClusterizer/DesignTimeBuild
 /ImageClusterizer/ImageClusterizer/resnet50-v2-7.onnx
+/.vs
