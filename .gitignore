@@ -68,3 +68,4 @@ nunit-*.xml
 /ImageClusterizer/ImageClusterizer/resnet50-v2-7.onnx
 /.vs
 /ImageClusterizer/.vs
+/ImageClusterizer/ImageClusterizer/Properties/PublishProfiles
