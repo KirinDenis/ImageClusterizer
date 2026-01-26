@@ -2,6 +2,7 @@
 <Project ToolsVersion="Current" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <AppIconSource>C:\Source\Repos\ImageClusterizer\ImageClusterizer\ImageClusterizer\Assets\AppIcon.png</AppIconSource>
+    <_LastSelectedProfileId>C:\Source\Repos\ImageClusterizer\ImageClusterizer\ImageClusterizer\Properties\PublishProfiles\win-x64.pubxml</_LastSelectedProfileId>
   </PropertyGroup>
   <ItemGroup>
     <None Update="App.xaml">

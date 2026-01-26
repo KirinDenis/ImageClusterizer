@@ -93,7 +93,7 @@ public class ClusteringService
         int canvasWidth = 10000,
         int canvasHeight = 10000)
     {
-        // Собираем все вектора
+
         var allVectors = new List<float[]>();
         var vectorInfo = new List<VectorInfo>();
 
@@ -128,10 +128,10 @@ public class ClusteringService
         // PCA reduction
         var positions2D = ReduceTo2D_PCA(allVectors);
 
-        // Нормализуем
+
         var normalized = NormalizePositions(positions2D, canvasWidth, canvasHeight);
 
-        // Результат
+
         var result = new List<ClusterPosition>();
         for (int i = 0; i < normalized.Length; i++)
         {
@@ -153,7 +153,7 @@ public class ClusteringService
         int n = vectors.Count;
         int d = vectors[0].Length;
 
-        // Создаём матрицу
+
         var matrixData = new double[n, d];
         for (int i = 0; i < n; i++)
         {
@@ -165,7 +165,7 @@ public class ClusteringService
 
         var matrix = Matrix<double>.Build.DenseOfArray(matrixData);
 
-        // Центрируем данные
+
         var columnMeans = matrix.ColumnSums() / n;
         var centered = matrix.Clone();
 
@@ -182,7 +182,7 @@ public class ClusteringService
         var u = svd.U;
         var s = svd.S;
 
-        // Берём первые 2 компоненты
+
         var result = new double[n][];
         for (int i = 0; i < n; i++)
         {

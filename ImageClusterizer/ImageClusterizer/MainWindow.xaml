@@ -15,7 +15,6 @@
         <DesktopAcrylicBackdrop />
     </Window.SystemBackdrop>
 
-
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -23,7 +22,7 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <CommandBar Grid.Row="0" HorizontalAlignment="Left">
+        <CommandBar Grid.Row="0">
             <AppBarButton
                  Icon="OpenFile"
                  ToolTipService.ToolTip="Select images"
@@ -40,19 +39,7 @@
                  Label="Reload exists from database"
                 Command="{x:Bind ViewModel.LoadExistingClustersCommand}"
                 />
-
-            <AppBarButton Icon="Map" Label="Load map" 
-                          Command="{x:Bind ViewModel.OpenClusterMapCommand}"/>
-
-            <AppBarButton Icon="ZoomIn" Label="Zoom In" 
-                          Command="{x:Bind ViewModel.ZoomInCommand}"/>
-            <AppBarButton Icon="ZoomOut" Label="Zoom Out" 
-                          Command="{x:Bind ViewModel.ZoomOutCommand}"/>
-            <AppBarButton Icon="Refresh" Label="Reset" 
-                          Command="{x:Bind ViewModel.ResetZoomCommand}"/>
             <AppBarSeparator/>
-
-            
         </CommandBar>
 
         <StackPanel Grid.Row="1" Padding="20" Spacing="10"
@@ -70,153 +57,147 @@
 				<Run Text="{x:Bind ViewModel.TotalCountText, Mode=OneWay}"/>
 				<Run Text=" images processed"/>
             </TextBlock>
-            <TextBlock Text="{x:Bind ViewModel.ZoomLevel, Mode=OneWay}" 
-                       VerticalAlignment="Center"
-                       Margin="10,0"/>
-
         </StackPanel>
 
-        <ScrollViewer Grid.Row="2"
+        <TabView Grid.Row="2">
+            <TabView.TabItems>
+                <TabViewItem Header="Stochastic">
+                    
+                    <ScrollViewer 
                       HorizontalScrollBarVisibility="Auto"
                       VerticalScrollBarVisibility="Auto"
-                      ZoomMode="Enabled"
+                      ZoomMode="Enabled"                      
                       MinZoomFactor="0.1"
                       MaxZoomFactor="10">
 
-            <RelativePanel Width="{x:Bind ViewModel.CanvasWidth}"
-                    Height="{x:Bind ViewModel.CanvasHeight}"
-                    Background="#F5F5F5">
+                        <RelativePanel Width="{x:Bind ViewModel.CanvasWidth}"
+                    Height="{x:Bind ViewModel.CanvasHeight}">
 
-                <!-- Рисуем изображения (точки) -->
-                <ItemsControl 
+                            <ItemsControl 
                     Margin="{Binding Converter={StaticResource PositionToMarginConverter}}"
                     ItemsSource="{x:Bind ViewModel.ImageItems, Mode=OneWay}">
 
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <RelativePanel/>
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
 
-                    <ItemsControl.ItemsPanel>
-                        <ItemsPanelTemplate>
-                            <RelativePanel/>
-                        </ItemsPanelTemplate>
-                    </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
 
-                    <ItemsControl.ItemTemplate>
-                        
-                        <DataTemplate x:DataType="models:ImageVisualItem">
-                            <Grid
-                                
-                                >
-                                <!-- Миниатюра изображения -->
-                                <Border Width="20" Height="20"
+                                    <DataTemplate x:DataType="models:ImageVisualItem">
+                                        <Grid>
+                                            <Border Width="20" Height="20"
                                         Margin="{Binding Converter={StaticResource PositionToMarginConverter}}"
                                         CornerRadius="10"
                                         BorderBrush="Gray"
                                         BorderThickness="1">
-                                    <Border.Background>
-                                        <ImageBrush ImageSource="{x:Bind ThumbnailPath}"
+                                                <Border.Background>
+                                                    <ImageBrush ImageSource="{x:Bind ThumbnailPath}"
                                                     Stretch="UniformToFill"/>
-                                    </Border.Background>
-                                </Border>
+                                                </Border.Background>
+                                            </Border>
 
-                                <!-- Tooltip с информацией -->
-                                <ToolTipService.ToolTip>
-                                    <ToolTip>
-                                        <StackPanel>
-                                            <Image Source="{x:Bind ThumbnailPath}"
+
+                                            <ToolTipService.ToolTip>
+                                                <ToolTip>
+                                                    <StackPanel>
+                                                        <Image Source="{x:Bind ThumbnailPath}"
                                                     Margin="100,100"
                                                    Width="150" Height="150"
                                                    Stretch="Uniform"/>
-                                            <TextBlock Text="{x:Bind FilePath}"
+                                                        <TextBlock Text="{x:Bind FilePath}"
                                                        MaxWidth="200"
                                                        TextWrapping="Wrap"/>
-                                        </StackPanel>
-                                    </ToolTip>
-                                </ToolTipService.ToolTip>
-                            </Grid>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
+                                                    </StackPanel>
+                                                </ToolTip>
+                                            </ToolTipService.ToolTip>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
 
-                <!-- Рисуем центроиды кластеров (большие круги) -->
-                <ItemsControl 
+
+                            <ItemsControl 
                     HorizontalAlignment="Left" VerticalAlignment="Top" ItemsSource="{x:Bind ViewModel.ClusterItems, Mode=OneWay}"
                     Margin="{Binding Converter={StaticResource PositionToMarginConverter}}"
                     >
-                    <ItemsControl.ItemsPanel>
-                        <ItemsPanelTemplate>
-                            <RelativePanel/>
-                        </ItemsPanelTemplate>
-                    </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <RelativePanel/>
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
 
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate x:DataType="models:ClusterVisualItem">
-                            <Grid
-                                Margin="{Binding Converter={StaticResource PositionToMarginConverter}}"
-                                >
-                                <!-- Круг вокруг кластера -->
-                                <Ellipse Width="60" Height="60"
-                                         Fill="#40007ACC"
-                                         Stroke="#007ACC"
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="models:ClusterVisualItem">
+                                        <Grid
+                                Margin="{Binding Converter={StaticResource PositionToMarginConverter}}">
+
+                                            <Ellipse Width="60" Height="60"
+                                         Fill="#A07ACCAA"
+                                         Stroke="#A07ACCAA"
                                          StrokeThickness="2"
                                          Margin="{Binding Converter={StaticResource PositionToMarginConverter}}"/>
 
-                                <!-- Номер кластера -->
-                                <TextBlock Text="{x:Bind ClusterId}"
+
+                                            <TextBlock Text="{x:Bind ClusterId}"
                                            FontSize="16"
                                            FontWeight="Bold"
                                            Foreground="White"
                                            HorizontalAlignment="Center"
                                            VerticalAlignment="Center"/>
 
-                                <!-- Tooltip -->
-                                <ToolTipService.ToolTip>
-                                    <TextBlock Text="{x:Bind Label}"/>
-                                </ToolTipService.ToolTip>
-                            </Grid>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
-            </RelativePanel>
-        </ScrollViewer>
 
-        <GridView
-            Visibility="Collapsed"
-            Grid.Row="2"
-            ItemsSource="{x:Bind ViewModel.Clusters, Mode=OneWay}"
-            Padding="20">
-            <GridView.ItemTemplate>
-                <DataTemplate x:DataType="models:ImageCluster">
-                    <Border
-                        Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                            <ToolTipService.ToolTip>
+                                                <TextBlock Text="{x:Bind Label}"/>
+                                            </ToolTipService.ToolTip>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </RelativePanel>
+                    </ScrollViewer>
+                </TabViewItem>
+                
+                <TabViewItem Header="Clusters">
+                    <GridView ItemsSource="{x:Bind ViewModel.Clusters, Mode=OneWay}" Padding="20" HorizontalAlignment="Center">
+                        <GridView.ItemTemplate>
+                            <DataTemplate x:DataType="models:ImageCluster">
+                                <Border
                         BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                         BorderThickness="1"
                         CornerRadius="8"
                         Padding="12"
                         Width="300">
-                        <StackPanel Spacing="8">
-                            <TextBlock
+                                    <StackPanel Spacing="8">
+                                        <TextBlock
                                 Text="{x:Bind ClusterId}"
                                 Style="{StaticResource SubtitleTextBlockStyle}"/>
-                            <TextBlock Text="{x:Bind Images.Count}"/>
+                                        <TextBlock Text="{x:Bind Images.Count}"/>
 
-                            <GridView
+                                        <GridView
                                 ItemsSource="{x:Bind Images}"
                                 MaxHeight="200"
                                 SelectionMode="None">
-                                <GridView.ItemTemplate>
-                                    <DataTemplate x:DataType="models:ImageVector">
-                                        <Image
+                                            <GridView.ItemTemplate>
+                                                <DataTemplate x:DataType="models:ImageVector">
+                                                    <Image
                                             Source="{x:Bind FilePath}"
                                             Width="80"
                                             Height="80"
                                             Stretch="UniformToFill"/>
-                                    </DataTemplate>
-                                </GridView.ItemTemplate>
-                            </GridView>
-                        </StackPanel>
-                    </Border>
-                </DataTemplate>
-            </GridView.ItemTemplate>
-        </GridView>
+                                                </DataTemplate>
+                                            </GridView.ItemTemplate>
+                                        </GridView>
+                                    </StackPanel>
+                                </Border>
+                            </DataTemplate>
+                        </GridView.ItemTemplate>
+                    </GridView>
+                </TabViewItem>
+            </TabView.TabItems>
+
+        </TabView>
 
     </Grid>
 </Window>
