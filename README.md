@@ -1,5 +1,20 @@
 # Image Clusterizer
 
+
+# Project Name
+
+**🚧 Status:** Early Stage Development / Proof of Concept
+
+This project is under active development and used for:
+- Validating technology choices
+- Testing architectural approaches
+- Experimenting with new technologies
+
+⚠️ Not recommended for production use.
+
+## Description
+...
+
 A Windows desktop application for organizing and clustering images using artificial intelligence.
 
 ## Description
