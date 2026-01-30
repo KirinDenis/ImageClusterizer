@@ -1,8 +1,5 @@
 # Image Clusterizer
 
-
-# Project Name
-
 **🚧 Status:** Early Stage Development / Proof of Concept
 
 This project is under active development and used for:
