@@ -10,7 +10,6 @@ This project is under active development and used for:
 ⚠️ Not recommended for production use.
 
 ## Description
-...
 
 A Windows desktop application for organizing and clustering images using artificial intelligence.
 
