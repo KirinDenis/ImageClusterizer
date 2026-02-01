@@ -69,7 +69,6 @@
     <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.8.260101001" />
     <PackageReference Include="SixLabors.ImageSharp" Version="3.1.12" />
     <PackageReference Include="System.Collections" Version="4.3.0" />
-    <PackageReference Include="UMAP" Version="1.0.62830" />
   </ItemGroup>
   <ItemGroup>
     <None Update="resnet50-v2-7.onnx">

@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.14.36908.2
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ResNet50_Test", "ResNet50_Test\ResNet50_Test.csproj", "{0E061DDF-2D58-464A-9B7D-98DFA7827371}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "1. ResNet50_GetLogits_Test", "1. ResNet50_GetLogits_Test\1. ResNet50_GetLogits_Test.csproj", "{0E061DDF-2D58-464A-9B7D-98DFA7827371}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BindingTest", "BindingTest\BindingTest.csproj", "{83985C7B-D94F-425F-A3F9-94CF9354AE09}"
 EndProject
