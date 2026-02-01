@@ -70,3 +70,5 @@ nunit-*.xml
 /ImageClusterizer/.vs
 /ImageClusterizer/ImageClusterizer/Properties/PublishProfiles
 /Polygon/1. ResNet50_GetLogits_Test/resnet50-v2-7.onnx
+/Polygon/2. ResNet50_GetEmbedding_Test/resnet50-v2-7.onnx
+/Polygon/2. ResNet50_GetEmbedding_Test/resnet50-embedding-only.onnx
