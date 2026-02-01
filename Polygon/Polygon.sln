@@ -11,6 +11,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ShowImages", "ShowImages\Sh
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "2. ResNet50_GetEmbedding_Test", "2. ResNet50_GetEmbedding_Test\2. ResNet50_GetEmbedding_Test.csproj", "{FDBFC1C3-E160-4B36-99EE-EA8B1A7C0063}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "3. ResNet50_Image_similarity_search_test", "3. ResNet50_Image_similarity_search_test\3. ResNet50_Image_similarity_search_test.csproj", "{38CDB0CE-9CB0-4709-A975-FE3F1ED5EA54}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -37,6 +39,10 @@ Global
 		{FDBFC1C3-E160-4B36-99EE-EA8B1A7C0063}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{FDBFC1C3-E160-4B36-99EE-EA8B1A7C0063}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{FDBFC1C3-E160-4B36-99EE-EA8B1A7C0063}.Release|Any CPU.Build.0 = Release|Any CPU
+		{38CDB0CE-9CB0-4709-A975-FE3F1ED5EA54}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{38CDB0CE-9CB0-4709-A975-FE3F1ED5EA54}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{38CDB0CE-9CB0-4709-A975-FE3F1ED5EA54}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{38CDB0CE-9CB0-4709-A975-FE3F1ED5EA54}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

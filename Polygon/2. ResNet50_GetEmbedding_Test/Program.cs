@@ -102,9 +102,9 @@ var inputs = new List<NamedOnnxValue>
 using var results = session.Run(inputs);
 
 //get the embedding (2048D vector) ""resnetv24_pool1_fwd"" hardcoded name SEE: Model Viewer https://netron.app/
-var logits = results.First(r => r.Name == Constants.OutputLayerName).AsEnumerable<float>();
+var embedding = results.First(r => r.Name == Constants.OutputLayerName).AsEnumerable<float>();
 
-Console.WriteLine(string.Join(" ", logits));
+Console.WriteLine(string.Join(" ", embedding));
 
 Console.ReadLine();
 
