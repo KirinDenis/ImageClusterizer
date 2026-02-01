@@ -1,4 +1,25 @@
-﻿using Microsoft.ML.OnnxRuntime;
+﻿/// <summary>
+/// ResNet-50 Image Classification Test
+/// 
+/// This application performs image classification using a pre-trained ResNet-50 ONNX model.
+/// 
+/// Processing Pipeline:
+/// 1. Loads pre-trained ResNet50 model (resnet50-v2-7.onnx from ONNX Model Zoo)
+/// 2. Loads input image and resizes to 224x224 pixels
+/// 3. Normalizes pixel values using ImageNet dataset statistics (mean/std)
+/// 4. Creates 4D tensor [batch=1, channels=3, height=224, width=224]
+/// 5. Runs inference through ResNet convolutional and fully-connected layers
+/// 6. Extracts 1000D logits vector from output layer "resnetv24_dense0_fwd"
+/// 
+/// The logits represent raw classification scores for 1000 ImageNet classes.
+/// To get probabilities, apply softmax to the logits.
+/// 
+/// Model source: https://github.com/onnx/models/blob/main/validated/vision/classification/resnet
+/// Model viewer: https://netron.app/
+/// </summary>
+
+
+using Microsoft.ML.OnnxRuntime;
 using Microsoft.ML.OnnxRuntime.Tensors;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
