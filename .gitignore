@@ -69,3 +69,4 @@ nunit-*.xml
 /.vs
 /ImageClusterizer/.vs
 /ImageClusterizer/ImageClusterizer/Properties/PublishProfiles
+/Polygon/1. ResNet50_GetLogits_Test/resnet50-v2-7.onnx
