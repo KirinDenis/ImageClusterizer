@@ -72,3 +72,5 @@ nunit-*.xml
 /Polygon/1. ResNet50_GetLogits_Test/resnet50-v2-7.onnx
 /Polygon/2. ResNet50_GetEmbedding_Test/resnet50-v2-7.onnx
 /Polygon/2. ResNet50_GetEmbedding_Test/resnet50-embedding-only.onnx
+/Polygon/3. ResNet50_Image_similarity_search_test/resnet50-embedding-only.onnx
+/Polygon/3. ResNet50_Image_similarity_search_test/resnet50-v2-7.onnx
