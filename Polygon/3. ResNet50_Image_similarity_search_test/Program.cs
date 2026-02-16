@@ -2,6 +2,8 @@
 //SEE: 2. ResNet50_GetEmbedding_Test
 //BEFORE this step
 
+// Calculate CosineSimilarity for images
+
 namespace ResNet50_Image_similarity_search_test;
 
 using Microsoft.ML.OnnxRuntime;
@@ -12,10 +14,11 @@ using SixLabors.ImageSharp.Processing;
 
 static class Constants
 {
-    //"cut_to_embedded.py to cut logits layer from resnet50-v2-7.onnx
+    //cut_to_embedded.py to cut logits layer from resnet50-v2-7.onnx
     public const string ModelPath = "resnet50-embedding-only.onnx";
     public const int ImageSize = 224;
     public const string OutputLayerName = "resnetv24_pool1_fwd";
+    
 
     //public const string ModelPath = "resnet50-v2-7.onnx";  
     //public const string OutputLayerName = "resnetv24_dense0_fwd";
@@ -66,7 +69,7 @@ internal class Program
             NamedOnnxValue.CreateFromTensor("data", input)
         };
 
-        using var results = session?.Run (inputs);
+        using var results = session?.Run(inputs);
 
         return new ImageEmbedding()
         {
@@ -90,6 +93,9 @@ internal class Program
 
         return dotProduct / (MathF.Sqrt(magnitudeA) * MathF.Sqrt(magnitudeB));
     }
+
+
+
     static void Main(string[] args)
     {
         if (!File.Exists(Constants.ModelPath))
@@ -99,10 +105,11 @@ internal class Program
             return;
         }
 
-        session = new InferenceSession(Constants.ModelPath);        
+        session = new InferenceSession(Constants.ModelPath);
 
         List<ImageEmbedding> embeddings = new List<ImageEmbedding>();
         embeddings.Add(GetEmbedding(@"Assets\3.jpg"));
+        embeddings.Add(GetEmbedding(@"Assets\4.jpg"));
         embeddings.Add(GetEmbedding(@"Assets\cat.4001.jpg"));
         embeddings.Add(GetEmbedding(@"Assets\cat.4002.jpg"));
         embeddings.Add(GetEmbedding(@"Assets\cat.4003.jpg"));
@@ -116,7 +123,7 @@ internal class Program
         embeddings.Add(GetEmbedding(@"Assets\3 - Copy.jpg"));
 
 
-        for (int i=1; i < embeddings.Count; i++)
+        for (int i = 1; i < embeddings.Count; i++)
         {
             Console.WriteLine($"Embedding {embeddings[i].imageFile} = {CosineSimilarity(embeddings[0].ebedding, embeddings[i].ebedding)}");
         }
