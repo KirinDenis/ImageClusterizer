@@ -14,6 +14,7 @@
     <None Remove="Assets\3 - Copy.jpg" />
     <None Remove="Assets\3.jpg" />
     <None Remove="Assets\4.jpg" />
+    <None Remove="Assets\cat.4001.copy.jpg" />
     <None Remove="Assets\cat.4001.jpg" />
     <None Remove="Assets\cat.4002.jpg" />
     <None Remove="Assets\cat.4003.jpg" />
@@ -22,6 +23,8 @@
     <None Remove="Assets\dog.4082.jpg" />
     <None Remove="Assets\dog.4083.jpg" />
     <None Remove="Assets\dog.4084.jpg" />
+    <None Remove="Assets\noise1.jpg" />
+    <None Remove="Assets\noise2.jpg" />
   </ItemGroup>
 
   <ItemGroup>
@@ -30,19 +33,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="Assets\1.jpg">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Assets\2.jpg">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Assets\3 - Copy.jpg">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Assets\3.jpg">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Assets\4.jpg">
+    <Content Include="Assets\cat.4001.copy.jpg">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <Content Include="Assets\cat.4001.jpg">
@@ -67,6 +58,12 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <Content Include="Assets\dog.4084.jpg">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Assets\noise1.jpg">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Assets\noise2.jpg">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
   </ItemGroup>

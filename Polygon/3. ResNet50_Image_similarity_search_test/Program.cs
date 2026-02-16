@@ -2,7 +2,7 @@
 //SEE: 2. ResNet50_GetEmbedding_Test
 //BEFORE this step
 
-// Calculate CosineSimilarity for images
+// Calculate CosineSimilarity for images using ResNet50 embeddings
 
 namespace ResNet50_Image_similarity_search_test;
 
@@ -14,15 +14,10 @@ using SixLabors.ImageSharp.Processing;
 
 static class Constants
 {
-    //cut_to_embedded.py to cut logits layer from resnet50-v2-7.onnx
+    //2. ResNet50_GetEmbedding_Test -> cut_to_embedded.py to cut logits layer from resnet50-v2-7.onnx
     public const string ModelPath = "resnet50-embedding-only.onnx";
     public const int ImageSize = 224;
-    public const string OutputLayerName = "resnetv24_pool1_fwd";
-    
-
-    //public const string ModelPath = "resnet50-v2-7.onnx";  
-    //public const string OutputLayerName = "resnetv24_dense0_fwd";
-
+    public const string OutputLayerName = "resnetv24_pool1_fwd";   
 }
 
 public class ImageEmbedding
@@ -78,10 +73,37 @@ internal class Program
         };
     }
 
+
+    /// <summary>
+    /// Calculates cosine similarity between two vectors.
+    /// 
+    /// NOTE: This is NOT measuring vector length/magnitude
+    /// It measures the ANGULAR SIMILARITY (direction) between two vectors in high-dimensional space.
+    /// 
+    /// Formula: cos(θ) = (A · B) / (||A|| × ||B||)
+    /// Where:
+    ///   - A · B is the dot product (sum of element-wise products)
+    ///   - ||A|| is the magnitude (length) of vector A
+    ///   - ||B|| is the magnitude (length) of vector B
+    /// 
+    /// Return value ranges from -1 to +1:
+    ///   +1.0 = Vectors point in exactly the same direction (identical/very similar images)
+    ///    0.0 = Vectors are perpendicular (completely unrelated images)
+    ///   -1.0 = Vectors point in opposite directions (inverse relationship)
+    /// 
+    /// </summary>
+    /// <param name="a">First embedding vector</param>
+    /// <param name="b">Second embedding vector</param>
+    /// <returns>Similarity score from -1 (opposite) to +1 (identical)</returns>
     private static float CosineSimilarity(float[] a, float[] b)
     {
+        // Accumulator for dot product (A · B)
         var dotProduct = 0f;
+
+        // ||A||² = sum of squared elements
         var magnitudeA = 0f;
+
+        // ||B||² = sum of squared elements
         var magnitudeB = 0f;
 
         for (int i = 0; i < a.Length; i++)
@@ -91,10 +113,9 @@ internal class Program
             magnitudeB += b[i] * b[i];
         }
 
+        // Final calculation: cos(θ) = dot_product / (||A|| × ||B||)
         return dotProduct / (MathF.Sqrt(magnitudeA) * MathF.Sqrt(magnitudeB));
     }
-
-
 
     static void Main(string[] args)
     {
@@ -108,8 +129,7 @@ internal class Program
         session = new InferenceSession(Constants.ModelPath);
 
         List<ImageEmbedding> embeddings = new List<ImageEmbedding>();
-        embeddings.Add(GetEmbedding(@"Assets\3.jpg"));
-        embeddings.Add(GetEmbedding(@"Assets\4.jpg"));
+        embeddings.Add(GetEmbedding(@"Assets\cat.4001.copy.jpg"));        
         embeddings.Add(GetEmbedding(@"Assets\cat.4001.jpg"));
         embeddings.Add(GetEmbedding(@"Assets\cat.4002.jpg"));
         embeddings.Add(GetEmbedding(@"Assets\cat.4003.jpg"));
@@ -118,10 +138,12 @@ internal class Program
         embeddings.Add(GetEmbedding(@"Assets\dog.4082.jpg"));
         embeddings.Add(GetEmbedding(@"Assets\dog.4083.jpg"));
         embeddings.Add(GetEmbedding(@"Assets\dog.4084.jpg"));
-        embeddings.Add(GetEmbedding(@"Assets\1.jpg"));
-        embeddings.Add(GetEmbedding(@"Assets\2.jpg"));
-        embeddings.Add(GetEmbedding(@"Assets\3 - Copy.jpg"));
+        embeddings.Add(GetEmbedding(@"Assets\noise1.jpg"));
+        embeddings.Add(GetEmbedding(@"Assets\noise2.jpg"));
+        
 
+        // Compare all images against the first image (index 0)
+        // Higher cosine similarity (closer to 1.0) means more similar images
 
         for (int i = 1; i < embeddings.Count; i++)
         {
