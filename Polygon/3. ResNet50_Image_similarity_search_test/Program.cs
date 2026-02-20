@@ -17,7 +17,12 @@ static class Constants
     //2. ResNet50_GetEmbedding_Test -> cut_to_embedded.py to cut logits layer from resnet50-v2-7.onnx
     public const string ModelPath = "resnet50-embedding-only.onnx";
     public const int ImageSize = 224;
-    public const string OutputLayerName = "resnetv24_pool1_fwd";   
+    public const string OutputLayerName = "resnetv24_pool1_fwd";
+
+
+    //Use this for category results
+    //public const string ModelPath = "resnet50-v2-7.onnx";
+    //public const string OutputLayerName = "resnetv24_dense0_fwd";
 }
 
 public class ImageEmbedding
