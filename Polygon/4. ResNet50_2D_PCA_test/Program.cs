@@ -135,19 +135,21 @@ internal class Program
 
 
         var columnMeans = matrix.ColumnSums() / vectors_count;
-        var centered = matrix.Clone();
+      //  var centered = matrix.Clone();
+
+        
 
         for (int i = 0; i < vectors_count; i++)
         {
             for (int j = 0; j < one_vector_dimension; j++)
             {
-                centered[i, j] -= columnMeans[j];
+                matrix[i, j] -= columnMeans[j];
             }
         }
 
         // SVD
         //Singulat value decomposition 
-        var svd = centered.Svd(computeVectors: true);
+        var svd = matrix.Svd(computeVectors: true);
         var u = svd.U; //left singular vectors
         var s = svd.S; //singular values 
 
@@ -166,8 +168,52 @@ internal class Program
     }
 
 
+    private static double[] Reduce2DTo1D_PCA(double[,] vectors2D)
+    {   
+        
+        var matrix = Matrix<double>.Build.DenseOfArray(vectors2D);
+
+        int dimension = 2;
+        int matrixRowSize = vectors2D.Length / dimension;
+
+
+        var columnMeans = matrix.ColumnSums() / (matrixRowSize);
+
+        for (int i = 0; i < matrixRowSize; i++)
+        {
+            for (int j = 0; j < dimension; j++)
+            {
+                matrix[i, j] -= columnMeans[j];
+            }
+        }
+
+        // SVD
+        //Singulat value decomposition 
+        var svd = matrix.Svd(computeVectors: true);
+        var u = svd.U; //left singular vectors, redy calculated A * V (matrix * |0.707 0.707| vector)
+        double s = svd.L2Norm; // or use -> = svd.S.Max() -> take the value along the axis with a large variance
+        
+        var result = new double[matrixRowSize];
+        for (int i = 0; i < matrixRowSize; i++)
+        {
+            result[i] = u[i, 0] * s; // project to 1D axis
+        }
+        return result;
+    }
+
+
+
     static void Main(string[] args)
     {
+        //PCA -> SVD test 
+        // 2D vectors to 1D PCA
+        double[,] vectors2D = { { 1, 2 }, { 2, 3 }, { 3, 4 }, { 4, 5 } } ;
+        
+        Console.WriteLine(string.Join(',', Reduce2DTo1D_PCA(vectors2D)));
+        
+        
+
+
         if (!File.Exists(Constants.ModelPath))
         {
             Console.WriteLine("Download ONNX Model Zoo from  https://github.com/onnx/models/blob/main/validated/vision/classification/resnet/model/resnet50-v2-7.onnx");
