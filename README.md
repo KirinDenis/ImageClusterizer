@@ -9,9 +9,13 @@ This project is under active development and used for:
 
 ⚠️ Not recommended for production use.
 
-## Description
 
-A Windows desktop application for organizing and clustering images using artificial intelligence.
+## Step by Step 
+
+Polygon\1. ResNet50_GetLogits_Test - 1000D logits vectors 
+Polygon\2. ResNet50_GetEmbedding_Test  - Feature Extraction (embedding vectors) 
+Polygon\3. ResNet50_Image_similarity_search_test  - Calculate CosineSimilarity for images (logits and embedding vectors) 
+Polygon\4. ResNet50_2D_PCA_test  - 2D Principal Component Analysis (PCA) (logits and embedding vectors) 
 
 ## Description
 

@@ -1,5 +1,5 @@
 ﻿/// <summary>
-/// ResNet-50 Image Classification Test
+/// ResNet-50 Image Classification
 /// 
 /// This application performs image classification using a pre-trained ResNet-50 ONNX model.
 /// 
