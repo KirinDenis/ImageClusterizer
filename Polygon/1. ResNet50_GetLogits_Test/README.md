@@ -1,4 +1,18 @@
-# ResNet-50 Image Classification with ONNX Runtime
+## Step 1 — ResNet50 Logits (1000D vectors)
+
+**`Polygon\1. ResNet50_GetLogits_Test`**
+
+Raw output of the ResNet50 network — a 1000-dimensional vector of logits (one value per ImageNet class). These are unnormalized scores before softmax. The class with the highest logit is the predicted label.
+
+```
+Input image › ResNet50 › float[1000] logits
+```
+
+- Values can be negative or positive
+- Apply `Softmax` to convert to probabilities
+- Dimension = 1000 (fixed, matches ImageNet class count)
+
+---
 
 This console application demonstrates image classification using a pre-trained ResNet50 model.
 
