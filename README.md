@@ -38,6 +38,12 @@ Compares images by measuring the angle between their vectors in high-dimensional
 
 Reduces high-dimensional vectors (1000D logits or 2048D embeddings) down to 2D for visualization, using Principal Component Analysis via SVD.
 
+### Step 5. Image Similarity with Sparse Embeddings
+
+**`Polygon\5. ResNet50_Sparse_Dot_Product_test`**
+
+Demonstration of sparse vector representation for image similarity search using ResNet50 embeddings. Shows how to reduce 2048-dimensional vectors to sparse format (top-N values) and compute cosine similarity efficiently.
+
 ## Description
 
 Image Clusterizer automatically organizes large collections of images by grouping visually similar photos together. The application analyzes image content using deep learning and creates intelligent clusters based on visual features like objects, scenes, colors, and composition.

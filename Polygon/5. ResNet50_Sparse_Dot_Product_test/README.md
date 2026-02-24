@@ -1,60 +1,45 @@
-## Step 4 ó 2D PCA Visualization
+Ôªø## Step 5. Image Similarity with Sparse Embeddings
 
-**`Polygon\4. ResNet50_2D_PCA_test`**
+**`Polygon\5. ResNet50_Sparse_Dot_Product_test`**
 
-Reduces high-dimensional vectors (1000D logits or 2048D embeddings) down to 2D for visualization, using Principal Component Analysis via SVD.
+Demonstration of sparse vector representation for image similarity search using ResNet50 embeddings. Shows how to reduce 2048-dimensional vectors to sparse format (top-N values) and compute cosine similarity efficiently.
 
-### Why PCA?
+### What this does
 
-You can't plot 2048 dimensions. PCA finds the 2 axes along which data varies the most ó projecting onto them loses minimum information.
+1. **Extract embeddings** from images using ResNet50 (2048-dimensional vectors)
+2. **Convert to sparse representation** - keep only top-10 values with their positions
+3. **Compute sparse cosine similarity** between images using reduced vectors
 
-### How it works (step by step):
+This approach trades some accuracy for significant memory savings and faster comparisons.
 
-**1. Build matrix** ó stack all vectors into matrix `A` of shape `[N ◊ D]`
+### How sparse vectors work
 
-**2. Centralize** ó subtract column means so the center of mass moves to origin `(0, 0, ...)`
+**Full embedding** (2048 dimensions):
 ```
-centered[i,j] = A[i,j] - mean(A[:,j])
+[0.12, -0.45, 0.89, 0.03, ..., 0.67, 0.22]  // 2048 floats
 ```
 
-**3. SVD decomposition**
-```
-A = U ◊ ? ◊ V?
-```
-- `U` ó left singular vectors `[N ◊ N]` ó projections of each point onto principal axes (normalized)
-- `?` (S) ó singular values, sorted descending ó scale/variance along each axis
-- `V?` ó right singular vectors ó the principal directions themselves (e.g. `[0.707, 0.707, ...]`)
-
-**4. Take first 2 components** ó columns 0 and 1 capture the most variance:
+**Sparse embedding** (top-10 values only):
 ```csharp
-result[i] = new double[] {
-    u[i, 0] * s[0],   // X ó projection onto axis of max variance
-    u[i, 1] * s[1]    // Y ó projection onto axis of second variance
-};
+Dictionary<int, float> {
+    { 342, 0.89 },   // position 342 had value 0.89
+    { 1024, 0.67 },  // position 1024 had value 0.67
+    { 567, 0.55 },
+    // ... 7 more
+}
 ```
 
-`U` is normalized (values in `-1..1`), multiply by `S` to restore real scale.
+Memory: **2048 √ó 4 bytes = 8 KB** ‚Üí **10 √ó 12 bytes = 120 bytes** (67x smaller)
 
-### Singular values tell you how much information is kept:
-
+### Example output
 ```
-explained_variance = s[0]2 / (s[0]2 + s[1]2 + ... + s[k]2)
-```
+12847 files found - 1234 ms
+vectors complete for 12847 image files - 145623 ms
+sparse vectors calculated - 89 ms
 
-If first 2 components explain 80%+ ó the 2D plot is meaningful. If only 20% ó points will look like noise.
+Embedding cat.4001.copy.jpg = 0.9987  ‚Üê Nearly identical
+Embedding cat.4002.jpg = 0.8234       ‚Üê Similar cat
+Embedding dog.4081.jpg = 0.3421       ‚Üê Different animal
+Embedding noise1.jpg = 0.0456         ‚Üê Random noise
 
-### Logits vs Embeddings in PCA:
-
-| | Logits (1000D) | Embeddings (2048D) |
-|---|---|---|
-| PCA spread | Class-based clusters | Visual/semantic clusters |
-| Interpretability | Similar classes group together | Similar looking images group together |
-| Info in 2D | Usually moderate | Usually better |
-
----
-
-## Dependencies
-
-- `MathNet.Numerics` ó SVD via `matrix.Svd(computeVectors: true)`
-- `Microsoft.ML.OnnxRuntime` ó ResNet50 inference
-- ResNet50 ONNX model (e.g. from [ONNX Model Zoo](https://github.com/onnx/models))
+dot product first image to all completed - 234 ms
