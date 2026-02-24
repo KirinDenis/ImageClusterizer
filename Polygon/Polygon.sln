@@ -15,6 +15,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "3. ResNet50_Image_similarit
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "4. ResNet50_2D_PCA_test", "4. ResNet50_2D_PCA_test\4. ResNet50_2D_PCA_test.csproj", "{11460993-7DB9-5719-BAB0-E88F98552BF6}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "5. ResNet50_Sparse_Dot_Product_test", "5. ResNet50_Sparse_Dot_Product_test\5. ResNet50_Sparse_Dot_Product_test.csproj", "{EB82AC9C-7F15-85EA-48A6-C56967AC2843}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -49,6 +51,10 @@ Global
 		{11460993-7DB9-5719-BAB0-E88F98552BF6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{11460993-7DB9-5719-BAB0-E88F98552BF6}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{11460993-7DB9-5719-BAB0-E88F98552BF6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EB82AC9C-7F15-85EA-48A6-C56967AC2843}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EB82AC9C-7F15-85EA-48A6-C56967AC2843}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EB82AC9C-7F15-85EA-48A6-C56967AC2843}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EB82AC9C-7F15-85EA-48A6-C56967AC2843}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
