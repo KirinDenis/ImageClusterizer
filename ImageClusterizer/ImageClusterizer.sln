@@ -5,6 +5,8 @@ VisualStudioVersion = 17.14.36908.2
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ImageClusterizer", "ImageClusterizer\ImageClusterizer.csproj", "{02F8EC59-9CBA-49DA-B995-1793ECA607F8}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ImageClusterizer_WPF", "ImageClusterizer_WPF\ImageClusterizer_WPF.csproj", "{4B91BB3B-B13D-4576-B08A-DBE30774C123}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|ARM64 = Debug|ARM64
@@ -33,6 +35,18 @@ Global
 		{02F8EC59-9CBA-49DA-B995-1793ECA607F8}.Release|x86.ActiveCfg = Release|x86
 		{02F8EC59-9CBA-49DA-B995-1793ECA607F8}.Release|x86.Build.0 = Release|x86
 		{02F8EC59-9CBA-49DA-B995-1793ECA607F8}.Release|x86.Deploy.0 = Release|x86
+		{4B91BB3B-B13D-4576-B08A-DBE30774C123}.Debug|ARM64.ActiveCfg = Debug|Any CPU
+		{4B91BB3B-B13D-4576-B08A-DBE30774C123}.Debug|ARM64.Build.0 = Debug|Any CPU
+		{4B91BB3B-B13D-4576-B08A-DBE30774C123}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{4B91BB3B-B13D-4576-B08A-DBE30774C123}.Debug|x64.Build.0 = Debug|Any CPU
+		{4B91BB3B-B13D-4576-B08A-DBE30774C123}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{4B91BB3B-B13D-4576-B08A-DBE30774C123}.Debug|x86.Build.0 = Debug|Any CPU
+		{4B91BB3B-B13D-4576-B08A-DBE30774C123}.Release|ARM64.ActiveCfg = Release|Any CPU
+		{4B91BB3B-B13D-4576-B08A-DBE30774C123}.Release|ARM64.Build.0 = Release|Any CPU
+		{4B91BB3B-B13D-4576-B08A-DBE30774C123}.Release|x64.ActiveCfg = Release|Any CPU
+		{4B91BB3B-B13D-4576-B08A-DBE30774C123}.Release|x64.Build.0 = Release|Any CPU
+		{4B91BB3B-B13D-4576-B08A-DBE30774C123}.Release|x86.ActiveCfg = Release|Any CPU
+		{4B91BB3B-B13D-4576-B08A-DBE30774C123}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

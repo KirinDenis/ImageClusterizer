@@ -18,27 +18,38 @@ namespace ImageClusterizer
         private readonly IHost host;
         public App()
         {
-            InitializeComponent();
-
-            UnhandledException += (s, e) =>
+            try
             {
-                e.Handled = true;
-                File.WriteAllText(
-                    Path.Combine(AppContext.BaseDirectory, "crash.log"),
-                    e.Exception.ToString()
-                );
-                
-                System.Diagnostics.Debug.WriteLine(e.Exception.ToString());
-            };
+                InitializeComponent();
 
-            host = Host.CreateDefaultBuilder()
-                .ConfigureServices((context, services) =>
+                UnhandledException += (s, e) =>
                 {
-                    ConfigureServices(services);
-                })
-                .Build();
+                    e.Handled = true;
+                    File.WriteAllText(
+                        Path.Combine(AppContext.BaseDirectory, "crash.log"),
+                        e.Exception.ToString()
+                    );
 
-            Services = host.Services;
+                    System.Diagnostics.Debug.WriteLine(e.Exception.ToString());
+                };
+
+                host = Host.CreateDefaultBuilder()
+                    .ConfigureServices((context, services) =>
+                    {
+                        ConfigureServices(services);
+                    })
+                    .Build();
+
+                Services = host.Services;
+            }
+            catch (Exception ex)
+            {
+                File.WriteAllText(
+                    Path.Combine(Environment.GetFolderPath(
+                        Environment.SpecialFolder.Desktop), "crash.log"),
+                    ex.ToString());
+                throw;
+            }
         }
 
         private void ConfigureServices(IServiceCollection services)
@@ -80,8 +91,18 @@ namespace ImageClusterizer
 
         protected override void OnLaunched(Microsoft.UI.Xaml.LaunchActivatedEventArgs args)
         {
-            mainWindow = Services?.GetRequiredService<MainWindow>();
-            mainWindow?.Activate();
+            try
+            {
+                mainWindow = Services?.GetRequiredService<MainWindow>();
+                mainWindow?.Activate();
+            }
+            catch (Exception ex)
+            {
+                File.WriteAllText(
+                    Path.Combine(Environment.GetFolderPath(
+                        Environment.SpecialFolder.Desktop), "crash.log"),
+                    ex.ToString());
+            }
         }
     }
 }
