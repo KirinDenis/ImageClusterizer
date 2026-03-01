@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.UI.Xaml;
 using System;
+using System.IO;
 
 
 namespace ImageClusterizer
@@ -18,6 +19,17 @@ namespace ImageClusterizer
         public App()
         {
             InitializeComponent();
+
+            UnhandledException += (s, e) =>
+            {
+                e.Handled = true;
+                File.WriteAllText(
+                    Path.Combine(AppContext.BaseDirectory, "crash.log"),
+                    e.Exception.ToString()
+                );
+                
+                System.Diagnostics.Debug.WriteLine(e.Exception.ToString());
+            };
 
             host = Host.CreateDefaultBuilder()
                 .ConfigureServices((context, services) =>
