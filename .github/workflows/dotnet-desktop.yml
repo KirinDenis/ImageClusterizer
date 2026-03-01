@@ -26,7 +26,7 @@ jobs:
       run: dotnet restore ImageClusterizer/ImageClusterizer.sln
 
     - name: Build
-      run: msbuild ImageClusterizer/ImageClusterizer.sln /p:Configuration=Release /p:Platform=x64
+      run: dotnet build ImageClusterizer/ImageClusterizer/ImageClusterizer.csproj --configuration Release -p:Platform=x64 -p:PublishReadyToRun=false -p:SelfContained=false
 
     - name: Upload artifact
       uses: actions/upload-artifact@v4
