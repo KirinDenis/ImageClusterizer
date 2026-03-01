@@ -18,7 +18,12 @@ jobs:
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: 8.0.x
-
+        
+    - name: Download ONNX model
+      run: |
+        curl -L -o ImageClusterizer/ImageClusterizer/resnet50-v2-7.onnx `
+          "https://github.com/onnx/models/raw/main/validated/vision/classification/resnet/model/resnet50-v2-7.onnx"
+          
     - name: Setup MSBuild
       uses: microsoft/setup-msbuild@v2
 
