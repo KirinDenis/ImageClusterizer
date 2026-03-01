@@ -6,15 +6,10 @@
     <RootNamespace>ImageClusterizer</RootNamespace>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <Platforms>x64;</Platforms>
-    <RuntimeIdentifiers>win-x64;</RuntimeIdentifiers>
-    <PublishProfile>win-$(Platform).pubxml</PublishProfile>
+    <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
     <UseWinUI>true</UseWinUI>
     <EnableMsixTooling>true</EnableMsixTooling>
     <Nullable>enable</Nullable>
-    <PublishSingleFile>false</PublishSingleFile>
-	<SelfContained>true</SelfContained>
-	<PublishReadyToRun>false</PublishReadyToRun>
-	<IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
   </PropertyGroup>
   <ItemGroup>
     <Content Remove="Assets\Square44x44Logo.altform-lightunplated_targetsize-16.png" />
