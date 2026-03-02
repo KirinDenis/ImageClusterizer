@@ -1,13 +1,14 @@
 ﻿//SEE: 1. ResNet50_GetLogits_Test
 //SEE: 2. ResNet50_GetEmbedding_Test
 //SEE: 3. ResNet50_Image_similarity_search_test
+//DON'T SEE: 4
+//SEE: 5. ResNet50_Sparse_Dot_Product_test
 //BEFORE this step
 
 // Sparse dot product 
 
 namespace ResNet50_Image_similarity_search_test;
 
-using MathNet.Numerics.LinearAlgebra;
 using Microsoft.ML.OnnxRuntime;
 using Microsoft.ML.OnnxRuntime.Tensors;
 using SixLabors.ImageSharp;
@@ -37,8 +38,6 @@ public class ImageEmbedding
     public string imageFile { get; set; }
     public float[] ebedding { get; set; }
     public Dictionary<int, float> sparse { get; set; }
-    public int x { get; set; }
-    public int y { get; set; }
 }
 
 internal class Program
@@ -111,7 +110,7 @@ internal class Program
             if (b.TryGetValue(itemA.Key, out var itemBValue))
             {
                 dotProduct += itemA.Value * itemBValue;
-            }                
+            }
         }
 
         foreach (var itemB in b)
@@ -136,29 +135,12 @@ internal class Program
     {
         Console.Clear();
 
-
         session = new InferenceSession(Constants.ModelPath);
 
-
         List<ImageEmbedding> embeddings = new List<ImageEmbedding>();
-        /*
-        //Known list test 
-        
-        embeddings.Add(GetEmbedding(@"Assets\cat.4001.copy.jpg"));
-        embeddings.Add(GetEmbedding(@"Assets\cat.4001.jpg"));
-        embeddings.Add(GetEmbedding(@"Assets\cat.4002.jpg"));
-        embeddings.Add(GetEmbedding(@"Assets\cat.4003.jpg"));
-        embeddings.Add(GetEmbedding(@"Assets\cat.4004.jpg"));
-        embeddings.Add(GetEmbedding(@"Assets\dog.4081.jpg"));
-        embeddings.Add(GetEmbedding(@"Assets\dog.4082.jpg"));
-        embeddings.Add(GetEmbedding(@"Assets\dog.4083.jpg"));
-        embeddings.Add(GetEmbedding(@"Assets\dog.4084.jpg"));
-        embeddings.Add(GetEmbedding(@"Assets\noise1.jpg"));
-        embeddings.Add(GetEmbedding(@"Assets\noise2.jpg"));
-        */
 
-        //Selected folder images test 
-
+        //--- Selected folder images test 
+        var sw = Stopwatch.StartNew();
         EnumerationOptions options = new EnumerationOptions
         {
             IgnoreInaccessible = true,
@@ -167,23 +149,28 @@ internal class Program
             ReturnSpecialDirectories = false
         };
 
-
-        var sw = Stopwatch.StartNew();
         //Selet path to folder with images 
-        //CHANGE E:\CatsAndDogs\ to your local images location
-        List<string> imageFiles = Directory.EnumerateFiles(@"E:\CatsAndDogs\", "*.*", options)
+        //                                     CHANGE THE -> E:\CatsAndDogs\smallmix\ to your local images location
+        List<string> imageFiles = Directory.EnumerateFiles(@"E:\CatsAndDogs\smallmix\", "*.*", options)
             .Where(f => IsImageFile(f))
             .ToList();
 
         Console.WriteLine($"{imageFiles.Count} files found - {sw.ElapsedMilliseconds} ms");
+
+        //ENDOF Selected folder images test ---
+
+        //--- Embedding 
         sw.Restart();
 
         foreach (string imageFile in imageFiles)
         {
             embeddings.Add(GetEmbedding(imageFile));
         }
-
         Console.WriteLine($"vectors complete for {imageFiles.Count} image files - {sw.ElapsedMilliseconds} ms");
+
+        //ENDOF Embedding ---
+
+        //--- Sparse vectors 
         sw.Restart();
 
         foreach (var imageEmbeding in embeddings)
@@ -195,19 +182,23 @@ internal class Program
                 .Take(Constants.sparseSize)
                 .ToDictionary(x => x.index, x => x.value);
         }
-
         Console.WriteLine($"sparse vectors calculated - {sw.ElapsedMilliseconds} ms");
+
+        //ENDOF Sparse vectors ---
+
+        //--- Dot Product vectors 
         sw.Restart();
 
-
         //SEE: 3. ResNet50_Image_similarity_search_test
+        //SEE: SEE: 5. ResNet50_Sparse_Dot_Product_test
         //All images to dot product to first
         for (int i = 1; i < embeddings.Count; i++)
         {
             Console.WriteLine($"Embedding {embeddings[i].imageFile} = {Sparse_CosineSimilarity(embeddings[0].sparse, embeddings[i].sparse)}");
         }
-
         Console.WriteLine($"dot product first image to all completed - {sw.ElapsedMilliseconds} ms");
+
+        //ENDOF Dot Product vectors 
 
         Console.ReadLine();
     }
