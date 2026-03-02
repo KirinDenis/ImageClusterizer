@@ -77,3 +77,5 @@ nunit-*.xml
 /Polygon/5. ResNet50_Sparse_Dot_Product_test/resnet50-embedding-only.onnx
 /Polygon/5. ResNet50_Sparse_Dot_Product_test/resnet50-v2-7.onnx
 /ImageClusterizer/ImageClusterizer_WPF/resnet50-v2-7.onnx
+/Polygon/6. ResNet50_Parallel/resnet50-embedding-only.onnx
+/Polygon/6. ResNet50_Parallel/resnet50-v2-7.onnx
