@@ -170,8 +170,8 @@ internal class Program
 
         var sw = Stopwatch.StartNew();
         //Selet path to folder with images 
-        //CHANGE E:\CatsAndDogs\ to your local images location
-        List<string> imageFiles = Directory.EnumerateFiles(@"E:\CatsAndDogs\", "*.*", options)
+        //CHANGE E:\CatsAndDogs\smallmix\ to your local images location
+        List<string> imageFiles = Directory.EnumerateFiles(@"E:\CatsAndDogs\smallmix\", "*.*", options)
             .Where(f => IsImageFile(f))
             .ToList();
 
