@@ -17,14 +17,14 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <!-- Toolbar: scan controls and vector type selection -->
+        <!-- Toolbar: scan controls, vector type selection, clear data -->
         <ToolBar Grid.Row="0" Height="48">
 
             <Button ToolTip="Select folder and scan images"
                     Command="{Binding ViewModel.StartScanImagesCommand}"
                     IsEnabled="{Binding ViewModel.IsNotScanning}">
                 <StackPanel Orientation="Horizontal">
-                    <TextBlock Text="📂" FontSize="16" Margin="0,0,6,0"/>
+                    <TextBlock Text="&#x1F4C2;" FontSize="16" Margin="0,0,6,0"/>
                     <TextBlock Text="Select location to scan images" VerticalAlignment="Center"/>
                 </StackPanel>
             </Button>
@@ -35,7 +35,7 @@
                     Command="{Binding ViewModel.CancelScanCommand}"
                     IsEnabled="{Binding ViewModel.IsScanning}">
                 <StackPanel Orientation="Horizontal">
-                    <TextBlock Text="⏹" FontSize="16" Margin="0,0,6,0"/>
+                    <TextBlock Text="&#x23F9;" FontSize="16" Margin="0,0,6,0"/>
                     <TextBlock Text="Stop scanning" VerticalAlignment="Center"/>
                 </StackPanel>
             </Button>
@@ -46,8 +46,8 @@
                     Command="{Binding ViewModel.LoadExistingClustersCommand}"
                     IsEnabled="{Binding ViewModel.IsNotScanning}">
                 <StackPanel Orientation="Horizontal">
-                    <TextBlock Text="🔄" FontSize="16" Margin="0,0,6,0"/>
-                    <TextBlock Text="Reload exists from database" VerticalAlignment="Center"/>
+                    <TextBlock Text="&#x1F504;" FontSize="16" Margin="0,0,6,0"/>
+                    <TextBlock Text="Reload from database" VerticalAlignment="Center"/>
                 </StackPanel>
             </Button>
 
@@ -61,6 +61,18 @@
                       SelectedItem="{Binding ViewModel.SelectedVectorType, Mode=TwoWay}"
                       IsEnabled="{Binding ViewModel.IsNotScanning}"
                       ToolTip="Embedding (2048D) - better for similarity. Logit (1000D) - classification output."/>
+
+            <Separator/>
+
+            <!-- Clear all data button -->
+            <Button ToolTip="Delete all stored vectors, thumbnails and cached data (original files are NOT affected)"
+                    Command="{Binding ViewModel.ClearAllDataCommand}"
+                    IsEnabled="{Binding ViewModel.IsNotScanning}">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="&#x1F5D1;" FontSize="16" Margin="0,0,6,0"/>
+                    <TextBlock Text="Clear all data" VerticalAlignment="Center"/>
+                </StackPanel>
+            </Button>
 
         </ToolBar>
 
@@ -84,8 +96,8 @@
         <!-- Main content tabs -->
         <TabControl Grid.Row="2">
 
-            <!-- Stochastic PCA scatter view -->
-            <TabItem Header="Stochastic">
+            <!-- PCA scatter view (primary) -->
+            <TabItem Header="Map">
                 <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
                     <Canvas Width="{Binding ViewModel.CanvasWidth}" Height="{Binding ViewModel.CanvasHeight}">
 
@@ -162,7 +174,7 @@
                 </ScrollViewer>
             </TabItem>
 
-            <!-- Cluster grid view -->
+            <!-- Cosine similarity cluster grid view (secondary) -->
             <TabItem Header="Clusters">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <ItemsControl ItemsSource="{Binding ViewModel.Clusters, Mode=OneWay}" Margin="20">
@@ -188,7 +200,7 @@
                                             </ItemsControl.ItemsPanel>
                                             <ItemsControl.ItemTemplate>
                                                 <DataTemplate DataType="{x:Type models:ImageVector}">
-                                                    <Image Source="{Binding FilePath}"
+                                                    <Image Source="{Binding ThumbnailPath}"
                                                            Width="80" Height="80"
                                                            Stretch="UniformToFill" Margin="2"/>
                                                 </DataTemplate>
