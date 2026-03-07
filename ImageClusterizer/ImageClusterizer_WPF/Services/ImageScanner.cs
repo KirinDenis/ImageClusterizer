@@ -2,6 +2,10 @@ namespace ImageClusterizer.Services;
 
 using ImageClusterizer.Models;
 using ImageClusterizer.Utlility;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Formats.Jpeg;
+using SixLabors.ImageSharp.PixelFormats;
+using SixLabors.ImageSharp.Processing;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -16,16 +20,25 @@ public class ImageScanner
 {
     private readonly IVectorDatabase vectorDatabase;
     private readonly IVectorService vectorService;
+    private readonly StorageService storageService;
 
-    public ImageScanner(IVectorDatabase vectorDatabase, IVectorService vectorService)
+    private const int ThumbnailSize   = 224;
+    private const int ThumbnailQuality = 85;
+
+    public ImageScanner(
+        IVectorDatabase vectorDatabase,
+        IVectorService vectorService,
+        StorageService storageService)
     {
         this.vectorDatabase = vectorDatabase;
-        this.vectorService = vectorService;
+        this.vectorService  = vectorService;
+        this.storageService = storageService;
     }
 
     /// <summary>
-    /// Scans a folder for images, extracts vectors and saves them to the database.
+    /// Scans a folder for images, extracts vectors, saves thumbnails and persists to database.
     /// Uses Channel-based producer/consumer pattern for parallel batch processing.
+    /// Thumbnails (224x224 JPEG) are saved to the thumbnails cache folder during scan.
     /// </summary>
     public async IAsyncEnumerable<ScanProgress> ScanFolderAsync(
         string folder,
@@ -38,9 +51,9 @@ public class ImageScanner
         {
             EnumerationOptions options = new EnumerationOptions
             {
-                IgnoreInaccessible    = true,
-                RecurseSubdirectories = true,
-                AttributesToSkip      = FileAttributes.System | FileAttributes.Hidden,
+                IgnoreInaccessible       = true,
+                RecurseSubdirectories    = true,
+                AttributesToSkip         = FileAttributes.System | FileAttributes.Hidden,
                 ReturnSpecialDirectories = false
             };
 
@@ -50,20 +63,17 @@ public class ImageScanner
         }
         catch (Exception e)
         {
-            // User may not have rights to selected folder or subfolder
-            // TODO: more selective search with per-folder error handling
+            // User may not have access rights to selected folder or subfolder
             Debug.WriteLine($"Can't open selected folder: {e.Message}");
         }
 
-        int totalCount = imageFiles?.Count ?? 0;
+        int totalCount     = imageFiles?.Count ?? 0;
         int processedCount = 0;
 
-        // Producer/Consumer pattern with Channel for parallel image processing
         // Bounded channel: prevents unbounded memory growth when producer is faster than consumers
         var fileChannel = Channel.CreateBounded<string>(
             new BoundedChannelOptions(Environment.ProcessorCount * 2)
             {
-                // If more items than (ProcessorCount * 2) are queued - block the producer
                 FullMode = BoundedChannelFullMode.Wait
             });
 
@@ -90,7 +100,6 @@ public class ImageScanner
         }, ct);
 
         // Consumers: process images in parallel using ProcessorCount tasks
-        // Each task reads from fileChannel, extracts vector, saves to DB
         var consumers = Enumerable.Range(0, Environment.ProcessorCount)
             .Select(_ => Task.Run(async () =>
             {
@@ -98,16 +107,39 @@ public class ImageScanner
                 {
                     try
                     {
+                        string? thumbnailPath = null;
+
+                        // Load image once, preprocess to 224x224 for both ONNX and thumbnail
+                        using (var image = Image.Load<Rgb24>(imageFile))
+                        {
+                            // Resize to 224x224 (same as ONNX preprocessing)
+                            image.Mutate(x => x.Resize(new ResizeOptions
+                            {
+                                Size = new Size(ThumbnailSize, ThumbnailSize),
+                                Mode = ResizeMode.Crop
+                            }));
+
+                            // Save thumbnail if it does not already exist
+                            var thumbPath = storageService.GetThumbnailPath(imageFile);
+                            if (!File.Exists(thumbPath))
+                            {
+                                await image.SaveAsJpegAsync(thumbPath,
+                                    new JpegEncoder { Quality = ThumbnailQuality });
+                            }
+                            thumbnailPath = thumbPath;
+                        }
+
                         // Extract feature vector using CNN (ResNet50)
                         var vector = await vectorService.GetEmbeddingAsync(imageFile, vectorType);
 
                         var imageVector = new ImageVector
                         {
-                            FilePath    = imageFile,
-                            Vector      = vector,
-                            VectorType  = vectorType,
-                            ProcessedAt = DateTime.UtcNow,
-                            FileSize    = new FileInfo(imageFile).Length
+                            FilePath      = imageFile,
+                            Vector        = vector,
+                            VectorType    = vectorType,
+                            ProcessedAt   = DateTime.UtcNow,
+                            FileSize      = new FileInfo(imageFile).Length,
+                            ThumbnailPath = thumbnailPath
                         };
 
                         // Persist to database
@@ -124,9 +156,8 @@ public class ImageScanner
                     }
                     catch (Exception ex)
                     {
-                        // TODO: store failed files in database and allow retry
+                        // TODO: store failed files and allow retry
                         Debug.WriteLine($"Error processing {imageFile}: {ex.Message}");
-                        continue;
                     }
                 }
             }, ct))
