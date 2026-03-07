@@ -25,11 +25,14 @@ public class LiteDbVectorStore : IVectorDatabase
         {
             var entity = new ImageVectorEntity
             {
-                FilePath    = vector.FilePath,
-                Vector      = vector.Vector,
-                VectorType  = vector.VectorType,
-                ProcessedAt = vector.ProcessedAt,
-                FileSize    = vector.FileSize
+                FilePath      = vector.FilePath,
+                Vector        = vector.Vector,
+                VectorType    = vector.VectorType,
+                ProcessedAt   = vector.ProcessedAt,
+                FileSize      = vector.FileSize,
+                ThumbnailPath = vector.ThumbnailPath,
+                PcaX          = vector.PcaX,
+                PcaY          = vector.PcaY
             };
             _collection.Upsert(entity);
         });
@@ -42,11 +45,14 @@ public class LiteDbVectorStore : IVectorDatabase
             return _collection.FindAll()
                 .Select(e => new ImageVector
                 {
-                    FilePath    = e.FilePath,
-                    Vector      = e.Vector,
-                    VectorType  = e.VectorType,
-                    ProcessedAt = e.ProcessedAt,
-                    FileSize    = e.FileSize
+                    FilePath      = e.FilePath,
+                    Vector        = e.Vector,
+                    VectorType    = e.VectorType,
+                    ProcessedAt   = e.ProcessedAt,
+                    FileSize      = e.FileSize,
+                    ThumbnailPath = e.ThumbnailPath,
+                    PcaX          = e.PcaX,
+                    PcaY          = e.PcaY
                 })
                 .ToList();
         });
@@ -56,11 +62,29 @@ public class LiteDbVectorStore : IVectorDatabase
     {
         return await Task.Run(() => _collection.Exists(x => x.FilePath == filePath));
     }
+
+    /// <summary>
+    /// Updates only PCA coordinates for the given file path.
+    /// Does not overwrite vector data — uses a targeted update for performance.
+    /// </summary>
+    public async Task SavePcaCoordinatesAsync(string filePath, float pcaX, float pcaY)
+    {
+        await Task.Run(() =>
+        {
+            var entity = _collection.FindOne(x => x.FilePath == filePath);
+            if (entity != null)
+            {
+                entity.PcaX = pcaX;
+                entity.PcaY = pcaY;
+                _collection.Update(entity);
+            }
+        });
+    }
 }
 
 /// <summary>
-/// LiteDB entity for persisting image vectors.
-/// Mirrors ImageVector model with all fields including VectorType and FileSize.
+/// LiteDB persistence entity for image vectors.
+/// Mirrors ImageVector model including thumbnail path and cached PCA coordinates.
 /// </summary>
 public class ImageVectorEntity
 {
@@ -70,4 +94,7 @@ public class ImageVectorEntity
     public VectorType VectorType { get; set; }
     public DateTime ProcessedAt { get; set; }
     public long FileSize { get; set; }
+    public string? ThumbnailPath { get; set; }
+    public float? PcaX { get; set; }
+    public float? PcaY { get; set; }
 }
