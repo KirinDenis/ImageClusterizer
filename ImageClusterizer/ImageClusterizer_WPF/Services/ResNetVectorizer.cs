@@ -1,5 +1,6 @@
-﻿namespace ImageClusterizer.Services;
+namespace ImageClusterizer.Services;
 
+using ImageClusterizer.Models;
 using Microsoft.ML.OnnxRuntime;
 using Microsoft.ML.OnnxRuntime.Tensors;
 using SixLabors.ImageSharp;
@@ -10,50 +11,71 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-
-
 public class ResNetVectorizer : IVectorService, IDisposable
 {
     private readonly InferenceSession _session;
     private const int ImageSize = 224;
 
+    // Known output node name for embeddings in resnet50-v2-7.onnx
+    // This is the penultimate layer (2048D) before classification
+    private const string EmbeddingOutputName = "resnetv24_dense0_fwd";
+
     // ImageNet normalization constants
     private static readonly float[] Mean = { 0.485f, 0.456f, 0.406f };
-    private static readonly float[] Std = { 0.229f, 0.224f, 0.225f };
+    private static readonly float[] Std  = { 0.229f, 0.224f, 0.225f };
+
+    // Cache available output names after first run to avoid repeated reflection
+    private string[]? _availableOutputNames;
 
     public ResNetVectorizer(string onnxModelPath)
     {
         _session = new InferenceSession(onnxModelPath);
     }
 
-    public async Task<float[]> GetEmbeddingAsync(string imagePath)
+    /// <summary>
+    /// Generates a feature vector for the specified image.
+    /// Returns embedding (2048D) or logit (1000D) based on vectorType parameter.
+    /// </summary>
+    public async Task<float[]> GetEmbeddingAsync(string imagePath, VectorType vectorType = VectorType.Embedding)
     {
         return await Task.Run(() =>
         {
-            
             using var image = Image.Load<Rgb24>(imagePath);
-
-            
             var inputTensor = PreprocessImage(image);
 
-            
             var inputs = new List<NamedOnnxValue>
             {
                 NamedOnnxValue.CreateFromTensor("data", inputTensor)
             };
 
-            
             using var results = _session.Run(inputs);
 
-            // embeddings
-            // => var embedding = results.First(r => r.Name == "resnetv24_dense0_fwd").AsEnumerable<float>().ToArray();
-            //                                                 ^^^ hardcoded at model  
-            var output = results.First().AsEnumerable<float>().ToArray();
+            if (vectorType == VectorType.Embedding)
+            {
+                // Try to get penultimate layer output (2048D embedding)
+                // Better for similarity search - not class-specific
+                var embeddingResult = results.FirstOrDefault(r => r.Name == EmbeddingOutputName);
+                if (embeddingResult != null)
+                {
+                    return embeddingResult.AsEnumerable<float>().ToArray();
+                }
 
-            return output;
+                // Fallback: if named output not found, use first output
+                // (model may have different output node names)
+                return results.First().AsEnumerable<float>().ToArray();
+            }
+            else
+            {
+                // VectorType.Logit: use last layer output (1000D, one per ImageNet class)
+                // Last result is the classification head output
+                return results.Last().AsEnumerable<float>().ToArray();
+            }
         });
     }
 
+    /// <summary>
+    /// Preprocesses image to ResNet50 input format: resize to 224x224, normalize per ImageNet stats
+    /// </summary>
     private DenseTensor<float> PreprocessImage(Image<Rgb24> image)
     {
         // Resize and crop to 224x224
@@ -63,8 +85,8 @@ public class ResNetVectorizer : IVectorService, IDisposable
             Mode = ResizeMode.Crop
         }));
 
-        // Create tensor with shape [1, 3, 224, 224] 4D
-        // (batch_size, channels, height, width)
+        // Create tensor with shape [1, 3, 224, 224]
+        // Layout: (batch_size, channels, height, width)
         var tensor = new DenseTensor<float>(new[] { 1, 3, ImageSize, ImageSize });
 
         // Fill tensor with normalized pixel values
@@ -73,11 +95,10 @@ public class ResNetVectorizer : IVectorService, IDisposable
             for (int x = 0; x < ImageSize; x++)
             {
                 var pixel = image[x, y];
-
-                // Normalize each channel (R, G, B)
-                tensor[0, 0, y, x] = (pixel.R / 255f - Mean[0]) / Std[0];  // Red
-                tensor[0, 1, y, x] = (pixel.G / 255f - Mean[1]) / Std[1];  // Green
-                tensor[0, 2, y, x] = (pixel.B / 255f - Mean[2]) / Std[2];  // Blue
+                // Normalize each channel: (value/255 - mean) / std
+                tensor[0, 0, y, x] = (pixel.R / 255f - Mean[0]) / Std[0]; // Red
+                tensor[0, 1, y, x] = (pixel.G / 255f - Mean[1]) / Std[1]; // Green
+                tensor[0, 2, y, x] = (pixel.B / 255f - Mean[2]) / Std[2]; // Blue
             }
         }
 
