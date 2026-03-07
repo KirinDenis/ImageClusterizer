@@ -1,14 +1,17 @@
-﻿namespace ImageClusterizer.Services;
+namespace ImageClusterizer.Services;
 
+using ImageClusterizer.Models;
 using System.Threading.Tasks;
 
 /// <summary>
-/// Service for generating embedding vectors from images using ML models
+/// Service for generating feature vectors from images using ML models
 /// </summary>
 public interface IVectorService
 {
     /// <summary>
-    /// Generates an embedding vector for the specified image
+    /// Generates a feature vector for the specified image.
+    /// Returns either an embedding (2048D) or logit vector (1000D)
+    /// depending on the specified VectorType.
     /// </summary>
-    Task<float[]> GetEmbeddingAsync(string imagePath);
+    Task<float[]> GetEmbeddingAsync(string imagePath, VectorType vectorType = VectorType.Embedding);
 }
