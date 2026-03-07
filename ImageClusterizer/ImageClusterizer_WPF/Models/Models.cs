@@ -9,24 +9,27 @@ namespace ImageClusterizer.Models
     /// </summary>
     public enum VectorType
     {
-        /// <summary>
-        /// 2048-dimensional embedding from penultimate ResNet layer (better for similarity)
-        /// </summary>
+        /// <summary>2048-dimensional embedding from penultimate ResNet layer (better for similarity)</summary>
         Embedding,
 
-        /// <summary>
-        /// 1000-dimensional logit output from final ResNet classification layer
-        /// </summary>
+        /// <summary>1000-dimensional logit output from final ResNet classification layer</summary>
         Logit
     }
 
     public record ImageVector
     {
-        public string FilePath { get; init; }       // use init setter - set value just once
-        public float[] Vector { get; init; }        // embedding or logit vector from ResNet50
-        public VectorType VectorType { get; init; } // type of vector stored
+        public string FilePath { get; init; }         // original image path (not stored in thumbnail path)
+        public float[] Vector { get; init; }          // embedding or logit vector from ResNet50
+        public VectorType VectorType { get; init; }   // type of vector stored
         public DateTime ProcessedAt { get; init; }
         public long FileSize { get; init; }
+
+        // Thumbnail cache: path to 224x224 JPEG saved during scan
+        public string? ThumbnailPath { get; init; }
+
+        // PCA 2D position cache: null = not yet computed
+        public float? PcaX { get; init; }
+        public float? PcaY { get; init; }
     }
 
     public class ImageCluster
@@ -75,6 +78,6 @@ namespace ImageClusterizer.Models
         [ObservableProperty] private double x;
         [ObservableProperty] private double y;
         [ObservableProperty] private string filePath;
-        [ObservableProperty] private string thumbnailPath;
+        [ObservableProperty] private string thumbnailPath; // points to cached thumbnail, not original
     }
 }
