@@ -19,6 +19,7 @@ public partial class MainViewModel : ObservableObject
     private readonly ImageScanner imageScanner;
     private readonly IVectorDatabase vectorDatabase;
     private readonly ClusteringService clusteringService;
+    private readonly StorageService storageService;
 
     // --- Cluster and image collections ---
     [ObservableProperty]
@@ -51,17 +52,9 @@ public partial class MainViewModel : ObservableObject
     public Visibility ProgressVisibility => IsScanning ? Visibility.Visible : Visibility.Collapsed;
 
     // --- Vector type selection ---
-    /// <summary>
-    /// Selected vector type for feature extraction.
-    /// Embedding (2048D) is better for similarity search.
-    /// Logit (1000D) is the raw classification output.
-    /// </summary>
     [ObservableProperty]
     private VectorType selectedVectorType = VectorType.Embedding;
 
-    /// <summary>
-    /// All available vector types exposed for UI binding (ComboBox)
-    /// </summary>
     public IReadOnlyList<VectorType> AvailableVectorTypes { get; } =
         Enum.GetValues<VectorType>().ToList();
 
@@ -80,21 +73,25 @@ public partial class MainViewModel : ObservableObject
 
     private CancellationTokenSource? cts;
 
-    public MainViewModel(ImageScanner imageScanner, IVectorDatabase vectorDatabase, ClusteringService clusteringService)
+    public MainViewModel(
+        ImageScanner imageScanner,
+        IVectorDatabase vectorDatabase,
+        ClusteringService clusteringService,
+        StorageService storageService)
     {
-        this.imageScanner = imageScanner;
-        this.vectorDatabase = vectorDatabase;
+        this.imageScanner     = imageScanner;
+        this.vectorDatabase   = vectorDatabase;
         this.clusteringService = clusteringService;
+        this.storageService   = storageService;
     }
+
+    // ---- Scan command ----
 
     [RelayCommand]
     private async Task StartScanImagesAsync()
     {
         string? folder = Utility.SelectFolderDiagoAsync();
-        if (string.IsNullOrWhiteSpace(folder))
-        {
-            return;
-        }
+        if (string.IsNullOrWhiteSpace(folder)) return;
 
         IsScanning = true;
         cts = new CancellationTokenSource();
@@ -103,7 +100,6 @@ public partial class MainViewModel : ObservableObject
         {
             Clusters.Clear();
 
-            // Pass selected vector type to the scanner
             await foreach (var progress in imageScanner.ScanFolderAsync(folder, SelectedVectorType, cts.Token))
             {
                 CurrentFile    = Path.GetFileName(progress.CurrentFile);
@@ -112,7 +108,7 @@ public partial class MainViewModel : ObservableObject
                 Progress       = (double)ProcessedCount / TotalCount * 100;
             }
 
-            await ClusterImagesAsync();
+            await LoadAndDisplayAsync();
         }
         finally
         {
@@ -122,16 +118,167 @@ public partial class MainViewModel : ObservableObject
         }
     }
 
+    // ---- Reload from database ----
+
+    [RelayCommand]
+    private async Task LoadExistingClustersAsync()
+    {
+        await LoadAndDisplayAsync();
+    }
+
+    // ---- Cancel scan ----
+
+    [RelayCommand]
+    private void CancelScan()
+    {
+        cts?.Cancel();
+    }
+
+    // ---- Clear all data ----
+
+    [RelayCommand]
+    private async Task ClearAllDataAsync()
+    {
+        var result = MessageBox.Show(
+            "This will permanently delete all stored vectors, thumbnails, and cached positions." +
+            "\n\nYour original image files will NOT be affected." +
+            "\n\nContinue?",
+            "Clear all data",
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Warning);
+
+        if (result != MessageBoxResult.Yes) return;
+
+        await storageService.ClearAllDataAsync();
+
+        // Clear all UI collections
+        Clusters.Clear();
+        ClusterItems.Clear();
+        ImageItems.Clear();
+        CurrentFile    = "";
+        ProcessedCount = 0;
+        TotalCount     = 0;
+        Progress       = 0;
+    }
+
+    // ---- Core logic ----
+
     /// <summary>
-    /// Loads cluster visual items from cluster list onto the canvas
+    /// Loads all vectors from DB. If PCA coordinates are fully cached, renders scatter immediately.
+    /// If any vector is missing PCA coordinates, recomputes PCA for all and saves results.
     /// </summary>
+    private async Task LoadAndDisplayAsync()
+    {
+        var vectors = await vectorDatabase.GetAllAsync();
+        if (vectors.Count == 0) return;
+
+        bool pcaCacheComplete = vectors.All(v => v.PcaX.HasValue && v.PcaY.HasValue);
+
+        if (pcaCacheComplete)
+        {
+            // Fast path: use cached PCA coordinates, skip expensive SVD computation
+            PopulateImageItemsFromCache(vectors);
+        }
+        else
+        {
+            // Slow path: compute PCA, save coordinates, then display
+            await ComputeAndCachePcaAsync(vectors);
+        }
+
+        // Also update cluster collection for Clusters tab (lazy — only structure, no computation)
+        await ClusterImagesAsync(vectors);
+    }
+
+    /// <summary>
+    /// Populates ImageItems directly from cached PCA coordinates in the DB.
+    /// No recomputation needed.
+    /// </summary>
+    private void PopulateImageItemsFromCache(List<ImageVector> vectors)
+    {
+        ImageItems.Clear();
+        ClusterItems.Clear();
+
+        // Normalize cached coordinates to canvas size
+        var minX = vectors.Min(v => v.PcaX!.Value);
+        var maxX = vectors.Max(v => v.PcaX!.Value);
+        var minY = vectors.Min(v => v.PcaY!.Value);
+        var maxY = vectors.Max(v => v.PcaY!.Value);
+
+        double rangeX = Math.Max(maxX - minX, 0.0001);
+        double rangeY = Math.Max(maxY - minY, 0.0001);
+        double padding = 0.05;
+        double usableW = CanvasWidth  * (1 - 2 * padding);
+        double usableH = CanvasHeight * (1 - 2 * padding);
+
+        foreach (var v in vectors)
+        {
+            ImageItems.Add(new ImageVisualItem
+            {
+                FilePath      = v.FilePath,
+                ThumbnailPath = v.ThumbnailPath ?? v.FilePath, // fallback to original if no thumbnail
+                X             = (v.PcaX!.Value - minX) / rangeX * usableW + CanvasWidth  * padding,
+                Y             = (v.PcaY!.Value - minY) / rangeY * usableH + CanvasHeight * padding
+            });
+        }
+    }
+
+    /// <summary>
+    /// Runs PCA computation on background thread, saves coordinates to DB, then displays results.
+    /// </summary>
+    private async Task ComputeAndCachePcaAsync(List<ImageVector> vectors)
+    {
+        var positions = await Task.Run(() =>
+            clusteringService.CalculatePositions(
+                new List<ImageCluster> { new ImageCluster { Images = vectors, ClusterId = 0 } },
+                (int)CanvasWidth,
+                (int)CanvasHeight));
+
+        ImageItems.Clear();
+        ClusterItems.Clear();
+
+        // Save PCA coordinates to DB and populate UI
+        var saveTasks = new List<Task>();
+
+        foreach (var pos in positions.Where(p => !p.IsCentroid))
+        {
+            ImageItems.Add(new ImageVisualItem
+            {
+                FilePath      = pos.ImageVector.FilePath,
+                ThumbnailPath = pos.ImageVector.ThumbnailPath ?? pos.ImageVector.FilePath,
+                X             = pos.X,
+                Y             = pos.Y
+            });
+
+            // Persist PCA coordinates for next startup (fire-and-forget batch)
+            saveTasks.Add(vectorDatabase.SavePcaCoordinatesAsync(
+                pos.ImageVector.FilePath,
+                (float)pos.X,
+                (float)pos.Y));
+        }
+
+        // Save all PCA coordinates in parallel
+        await Task.WhenAll(saveTasks);
+    }
+
+    /// <summary>Computes cosine similarity clusters and updates the Clusters collection</summary>
+    private async Task ClusterImagesAsync(List<ImageVector> vectors)
+    {
+        var clusterList = await Task.Run(() => clusteringService.ClusterBySimilarity(vectors, 0.5f));
+
+        Clusters.Clear();
+        foreach (var cluster in clusterList)
+        {
+            Clusters.Add(cluster);
+        }
+    }
+
+    /// <summary>Builds cluster visual items from an existing cluster list for the scatter view</summary>
     public void LoadClusters(List<ImageCluster> clusters)
     {
         ClusterItems.Clear();
-        ImageItems.Clear();
 
         var positions = clusteringService.CalculatePositions(clusters, (int)CanvasWidth, (int)CanvasHeight);
-        var grouped = positions.GroupBy(p => p.ClusterId);
+        var grouped   = positions.GroupBy(p => p.ClusterId);
 
         foreach (var group in grouped)
         {
@@ -146,45 +293,6 @@ public partial class MainViewModel : ObservableObject
                     ImageCount = group.Count(p => !p.IsCentroid)
                 });
             }
-
-            foreach (var imagePos in group.Where(p => !p.IsCentroid))
-            {
-                ImageItems.Add(new ImageVisualItem
-                {
-                    ClusterId     = imagePos.ClusterId,
-                    X             = imagePos.X,
-                    Y             = imagePos.Y,
-                    FilePath      = imagePos.ImageVector.FilePath,
-                    ThumbnailPath = imagePos.ImageVector.FilePath
-                });
-            }
         }
-    }
-
-    [RelayCommand]
-    private async Task LoadExistingClustersAsync()
-    {
-        await ClusterImagesAsync();
-        LoadClusters(Clusters.ToList());
-    }
-
-    [RelayCommand]
-    private void CancelScan()
-    {
-        cts?.Cancel();
-    }
-
-    private async Task ClusterImagesAsync()
-    {
-        var vectors = await vectorDatabase.GetAllAsync();
-        var clusterList = await Task.Run(() => clusteringService.ClusterBySimilarity(vectors, 0.5f));
-
-        Clusters.Clear();
-        foreach (var cluster in clusterList)
-        {
-            Clusters.Add(cluster);
-        }
-
-        LoadClusters(clusterList);
     }
 }
