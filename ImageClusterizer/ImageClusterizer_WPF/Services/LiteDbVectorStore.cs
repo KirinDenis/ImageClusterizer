@@ -1,4 +1,4 @@
-﻿namespace ImageClusterizer.Services;
+namespace ImageClusterizer.Services;
 
 using ImageClusterizer.Models;
 using LiteDB;
@@ -25,9 +25,11 @@ public class LiteDbVectorStore : IVectorDatabase
         {
             var entity = new ImageVectorEntity
             {
-                FilePath = vector.FilePath,
-                Vector = vector.Vector,
-                ProcessedAt = vector.ProcessedAt
+                FilePath    = vector.FilePath,
+                Vector      = vector.Vector,
+                VectorType  = vector.VectorType,
+                ProcessedAt = vector.ProcessedAt,
+                FileSize    = vector.FileSize
             };
             _collection.Upsert(entity);
         });
@@ -40,9 +42,11 @@ public class LiteDbVectorStore : IVectorDatabase
             return _collection.FindAll()
                 .Select(e => new ImageVector
                 {
-                    FilePath = e.FilePath,
-                    Vector = e.Vector,
-                    ProcessedAt = e.ProcessedAt
+                    FilePath    = e.FilePath,
+                    Vector      = e.Vector,
+                    VectorType  = e.VectorType,
+                    ProcessedAt = e.ProcessedAt,
+                    FileSize    = e.FileSize
                 })
                 .ToList();
         });
@@ -54,10 +58,16 @@ public class LiteDbVectorStore : IVectorDatabase
     }
 }
 
+/// <summary>
+/// LiteDB entity for persisting image vectors.
+/// Mirrors ImageVector model with all fields including VectorType and FileSize.
+/// </summary>
 public class ImageVectorEntity
 {
     public ObjectId Id { get; set; }
     public string FilePath { get; set; }
     public float[] Vector { get; set; }
+    public VectorType VectorType { get; set; }
     public DateTime ProcessedAt { get; set; }
+    public long FileSize { get; set; }
 }
