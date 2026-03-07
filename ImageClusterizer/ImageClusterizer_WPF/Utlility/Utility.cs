@@ -1,36 +1,31 @@
-﻿using Microsoft.Win32;
-using System;
-using System.Collections.Generic;
+using Microsoft.Win32;
 using System.IO;
-using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Text;
-using System.Threading.Tasks;
-using Windows.Storage;
-using Windows.Storage.Pickers;
 
 namespace ImageClusterizer.Utlility
 {
     public static class Utility
     {
-
+        /// <summary>
+        /// Opens a folder picker dialog and returns the selected folder path, or null if cancelled.
+        /// </summary>
         public static string? SelectFolderDiagoAsync()
         {
             var dialog = new OpenFolderDialog()
             {
-                Title = "Select folder with images",
+                Title      = "Select folder with images",
                 Multiselect = false
             };
 
-            return dialog.ShowDialog() == true
-                ? dialog.FolderName
-                : null;
+            return dialog.ShowDialog() == true ? dialog.FolderName : null;
         }
+
+        /// <summary>
+        /// Returns true if the file has a supported image extension
+        /// </summary>
         public static bool IsImageFile(string filePath)
         {
             string extension = Path.GetExtension(filePath).ToLowerInvariant();
             return extension is ".jpg" or ".jpeg" or ".gif" or ".png" or ".bmp";
         }
-
     }
 }
