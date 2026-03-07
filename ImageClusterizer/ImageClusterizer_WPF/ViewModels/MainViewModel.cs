@@ -1,11 +1,10 @@
-﻿namespace ImageClusterizer.ViewModels;
+namespace ImageClusterizer.ViewModels;
 
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using ImageClusterizer.Models;
 using ImageClusterizer.Services;
 using ImageClusterizer.Utlility;
-
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -14,8 +13,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
-using Windows.Storage;
-
 
 public partial class MainViewModel : ObservableObject
 {
@@ -23,10 +20,11 @@ public partial class MainViewModel : ObservableObject
     private readonly IVectorDatabase vectorDatabase;
     private readonly ClusteringService clusteringService;
 
-
+    // --- Cluster and image collections ---
     [ObservableProperty]
     private ObservableCollection<ImageCluster> clusters = new();
 
+    // --- Scan progress state ---
     [ObservableProperty]
     private string currentFile = "";
 
@@ -52,7 +50,22 @@ public partial class MainViewModel : ObservableObject
     public bool IsNotScanning => !IsScanning;
     public Visibility ProgressVisibility => IsScanning ? Visibility.Visible : Visibility.Collapsed;
 
+    // --- Vector type selection ---
+    /// <summary>
+    /// Selected vector type for feature extraction.
+    /// Embedding (2048D) is better for similarity search.
+    /// Logit (1000D) is the raw classification output.
+    /// </summary>
+    [ObservableProperty]
+    private VectorType selectedVectorType = VectorType.Embedding;
 
+    /// <summary>
+    /// All available vector types exposed for UI binding (ComboBox)
+    /// </summary>
+    public IReadOnlyList<VectorType> AvailableVectorTypes { get; } =
+        Enum.GetValues<VectorType>().ToList();
+
+    // --- Canvas visualization ---
     [ObservableProperty]
     private ObservableCollection<ClusterVisualItem> clusterItems = new();
 
@@ -65,8 +78,8 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty]
     private double canvasHeight = 1000;
 
-
     private CancellationTokenSource? cts;
+
     public MainViewModel(ImageScanner imageScanner, IVectorDatabase vectorDatabase, ClusteringService clusteringService)
     {
         this.imageScanner = imageScanner;
@@ -78,7 +91,6 @@ public partial class MainViewModel : ObservableObject
     private async Task StartScanImagesAsync()
     {
         string? folder = Utility.SelectFolderDiagoAsync();
-
         if (string.IsNullOrWhiteSpace(folder))
         {
             return;
@@ -91,12 +103,13 @@ public partial class MainViewModel : ObservableObject
         {
             Clusters.Clear();
 
-            await foreach (var progress in imageScanner.ScanFolderAsync(folder, cts.Token))
+            // Pass selected vector type to the scanner
+            await foreach (var progress in imageScanner.ScanFolderAsync(folder, SelectedVectorType, cts.Token))
             {
-                CurrentFile = Path.GetFileName(progress.CurrentFile);
+                CurrentFile    = Path.GetFileName(progress.CurrentFile);
                 ProcessedCount = progress.ProcessedCount;
-                TotalCount = progress.TotalCount;
-                Progress = (double)ProcessedCount / TotalCount * 100;
+                TotalCount     = progress.TotalCount;
+                Progress       = (double)ProcessedCount / TotalCount * 100;
             }
 
             await ClusterImagesAsync();
@@ -109,27 +122,27 @@ public partial class MainViewModel : ObservableObject
         }
     }
 
+    /// <summary>
+    /// Loads cluster visual items from cluster list onto the canvas
+    /// </summary>
     public void LoadClusters(List<ImageCluster> clusters)
     {
         ClusterItems.Clear();
         ImageItems.Clear();
 
-        var positions = clusteringService.CalculatePositions(clusters,
-            (int)CanvasWidth, (int)CanvasHeight);
-
+        var positions = clusteringService.CalculatePositions(clusters, (int)CanvasWidth, (int)CanvasHeight);
         var grouped = positions.GroupBy(p => p.ClusterId);
 
         foreach (var group in grouped)
         {
-
             var centroid = group.FirstOrDefault(p => p.IsCentroid);
             if (centroid != null)
             {
                 ClusterItems.Add(new ClusterVisualItem
                 {
-                    ClusterId = centroid.ClusterId,
-                    X = centroid.X,
-                    Y = centroid.Y,
+                    ClusterId  = centroid.ClusterId,
+                    X          = centroid.X,
+                    Y          = centroid.Y,
                     ImageCount = group.Count(p => !p.IsCentroid)
                 });
             }
@@ -138,16 +151,15 @@ public partial class MainViewModel : ObservableObject
             {
                 ImageItems.Add(new ImageVisualItem
                 {
-                    ClusterId = imagePos.ClusterId,
-                    X = imagePos.X,
-                    Y = imagePos.Y,
-                    FilePath = imagePos.ImageVector.FilePath,
+                    ClusterId     = imagePos.ClusterId,
+                    X             = imagePos.X,
+                    Y             = imagePos.Y,
+                    FilePath      = imagePos.ImageVector.FilePath,
                     ThumbnailPath = imagePos.ImageVector.FilePath
                 });
             }
         }
     }
-
 
     [RelayCommand]
     private async Task LoadExistingClustersAsync()
@@ -162,17 +174,17 @@ public partial class MainViewModel : ObservableObject
         cts?.Cancel();
     }
 
-
     private async Task ClusterImagesAsync()
     {
         var vectors = await vectorDatabase.GetAllAsync();
-        var clusters = await Task.Run(() => clusteringService.ClusterBySimilarity(vectors, 0.5f));
+        var clusterList = await Task.Run(() => clusteringService.ClusterBySimilarity(vectors, 0.5f));
 
         Clusters.Clear();
-        foreach (var cluster in clusters)
+        foreach (var cluster in clusterList)
         {
             Clusters.Add(cluster);
         }
+
+        LoadClusters(clusterList);
     }
 }
-
