@@ -1,4 +1,4 @@
-﻿namespace ImageClusterizer.Services;
+namespace ImageClusterizer.Services;
 
 using ImageClusterizer.Models;
 using ImageClusterizer.Utlility;
@@ -15,7 +15,6 @@ using System.Threading.Tasks;
 public class ImageScanner
 {
     private readonly IVectorDatabase vectorDatabase;
-
     private readonly IVectorService vectorService;
 
     public ImageScanner(IVectorDatabase vectorDatabase, IVectorService vectorService)
@@ -23,57 +22,62 @@ public class ImageScanner
         this.vectorDatabase = vectorDatabase;
         this.vectorService = vectorService;
     }
-    public async IAsyncEnumerable<ScanProgress> ScanFolderAsync(string folder, [EnumeratorCancellation] CancellationToken ct = default)
+
+    /// <summary>
+    /// Scans a folder for images, extracts vectors and saves them to the database.
+    /// Uses Channel-based producer/consumer pattern for parallel batch processing.
+    /// </summary>
+    public async IAsyncEnumerable<ScanProgress> ScanFolderAsync(
+        string folder,
+        VectorType vectorType = VectorType.Embedding,
+        [EnumeratorCancellation] CancellationToken ct = default)
     {
         List<string> imageFiles = null;
+
         try
         {
             EnumerationOptions options = new EnumerationOptions
             {
-                IgnoreInaccessible = true,
+                IgnoreInaccessible    = true,
                 RecurseSubdirectories = true,
-                AttributesToSkip = FileAttributes.System | FileAttributes.Hidden,
+                AttributesToSkip      = FileAttributes.System | FileAttributes.Hidden,
                 ReturnSpecialDirectories = false
             };
 
             imageFiles = Directory.EnumerateFiles(folder, "*.*", options)
                 .Where(f => Utility.IsImageFile(f))
                 .ToList();
-
         }
         catch (Exception e)
         {
-            //user can not has right to selected folder or subfolder
-            //TODO: more selective search with skip some folders
+            // User may not have rights to selected folder or subfolder
+            // TODO: more selective search with per-folder error handling
             Debug.WriteLine($"Can't open selected folder: {e.Message}");
         }
 
-        int totalCount = imageFiles.Count;
+        int totalCount = imageFiles?.Count ?? 0;
         int processedCount = 0;
 
-        //Producer Consumer pattern realisation for images processing with Channel using 
-
-        //Channel for processing files
-        //it is bounded channel by BoundedChannelOptions
+        // Producer/Consumer pattern with Channel for parallel image processing
+        // Bounded channel: prevents unbounded memory growth when producer is faster than consumers
         var fileChannel = Channel.CreateBounded<string>(
             new BoundedChannelOptions(Environment.ProcessorCount * 2)
             {
-                //if more than user PC Proccesors * 2 item in channel - wait before write next item
+                // If more items than (ProcessorCount * 2) are queued - block the producer
                 FullMode = BoundedChannelFullMode.Wait
             });
 
-        // Channel for lazy return processed image via yield return
-        // no bounds for this channel 
+        // Unbounded channel for lazy return of progress updates via yield return
         var progressChannel = Channel.CreateUnbounded<ScanProgress>();
 
-        //just wrote images file names to fileChannel one by one 
+        // Producer: writes image file paths into fileChannel one by one
         var producer = Task.Run(async () =>
         {
-            foreach (var imageFile in imageFiles)
+            foreach (var imageFile in imageFiles ?? new List<string>())
             {
                 if (ct.IsCancellationRequested) break;
 
-                //Check database exists here
+                // Skip files already in the database
                 if (await vectorDatabase.ExistsAsync(imageFile))
                 {
                     Interlocked.Increment(ref processedCount);
@@ -83,74 +87,64 @@ public class ImageScanner
                 await fileChannel.Writer.WriteAsync(imageFile);
             }
             fileChannel.Writer.Complete();
-        },
-        ct);
+        }, ct);
 
-        //consumer read files names from channel and process them in 
-        //user PC ProcessorCount Tasks... so if user has 2 processors only
-        //2 threads process images, if 4 then 4 threads
-        var consumer = Enumerable.Range(0, Environment.ProcessorCount)
-            .Select(_=>Task.Run(async () =>
+        // Consumers: process images in parallel using ProcessorCount tasks
+        // Each task reads from fileChannel, extracts vector, saves to DB
+        var consumers = Enumerable.Range(0, Environment.ProcessorCount)
+            .Select(_ => Task.Run(async () =>
             {
                 await foreach (var imageFile in fileChannel.Reader.ReadAllAsync(ct))
                 {
                     try
                     {
-                        // CNN + ResNet here
-                        // Get embedding vector
-                        var vector = await vectorService.GetEmbeddingAsync(imageFile);
+                        // Extract feature vector using CNN (ResNet50)
+                        var vector = await vectorService.GetEmbeddingAsync(imageFile, vectorType);
 
                         var imageVector = new ImageVector
                         {
-                            FilePath = imageFile,
-                            Vector = vector,
+                            FilePath    = imageFile,
+                            Vector      = vector,
+                            VectorType  = vectorType,
                             ProcessedAt = DateTime.UtcNow,
-                            FileSize = new FileInfo(imageFile).Length
+                            FileSize    = new FileInfo(imageFile).Length
                         };
 
-                        // Save to DB
+                        // Persist to database
                         await vectorDatabase.SaveAsync(imageVector);
 
                         var count = Interlocked.Increment(ref processedCount);
-
-
                         await progressChannel.Writer.WriteAsync(new ScanProgress
                         {
-                            CurrentFile = imageFile,
+                            CurrentFile    = imageFile,
                             ProcessedCount = count,
-                            TotalCount = totalCount,
-                            NewVector = imageVector
+                            TotalCount     = totalCount,
+                            NewVector      = imageVector
                         }, ct);
-
                     }
                     catch (Exception ex)
                     {
-                        //TODO: remeber select store to data base and skip the files
+                        // TODO: store failed files in database and allow retry
                         Debug.WriteLine($"Error processing {imageFile}: {ex.Message}");
                         continue;
                     }
                 }
             }, ct))
-            .ToArray(); //collect all tasks to array 
+            .ToArray();
 
+        // Wait for all consumers, then close progress channel
         var completionTask = Task.Run(async () =>
-        { 
-            //waiting before all consumer task is completed 
-            //TODO: ASC: maybe use cancelation token or timeout here 
-            await Task.WhenAll(consumer);
+        {
+            await Task.WhenAll(consumers);
             progressChannel.Writer.Complete();
         });
 
+        // Lazily yield progress updates back to the caller
         await foreach (var progress in progressChannel.Reader.ReadAllAsync(ct))
         {
-            //Lazy return to caller all processed images 
             yield return progress;
         }
 
-        //exit when all consumer task is done 
         await completionTask;
-
-        //COOL!!!
     }
 }
-
