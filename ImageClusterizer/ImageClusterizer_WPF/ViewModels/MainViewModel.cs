@@ -92,7 +92,7 @@ public partial class MainViewModel : ObservableObject
     private bool useGpu = true;
 
     [ObservableProperty]
-    private int threadCount = 0;   // 0 = auto (Environment.ProcessorCount)
+    private int threadCount = 0;   // 0 = auto
 
     // --- GPU info ---
     [ObservableProperty]
@@ -169,7 +169,7 @@ public partial class MainViewModel : ObservableObject
             });
         });
 
-        // Load settings
+        // Load persisted settings
         var settings = AppSettings.Load();
         SparseTopN = settings.SparseTopN;
         UseGpu = settings.UseGpu;
@@ -196,12 +196,26 @@ public partial class MainViewModel : ObservableObject
         ThemeIcon = themeService.CurrentTheme == ThemeService.Theme.Dark ? "Dark" : "Light";
     }
 
-    // ---- Console ----
+    // ---- Console panel toggle ----
+    [RelayCommand]
+    private void ToggleConsole()
+    {
+        IsConsoleExpanded = !IsConsoleExpanded;
+    }
+
     [RelayCommand]
     private void ClearConsole()
     {
         ConsoleLines.Clear();
         logService.Clear();
+    }
+
+    // ---- Cockpit panel toggle ----
+    [RelayCommand]
+    private void ToggleCockpit()
+    {
+        IsCockpitExpanded = !IsCockpitExpanded;
+        logService.Log($"Advanced settings panel: {(IsCockpitExpanded ? "expanded" : "collapsed")}");
     }
 
     // ---- Advanced settings save ----
@@ -391,12 +405,12 @@ public partial class MainViewModel : ObservableObject
 
         if (pcaCacheComplete)
         {
-            logService.Log("PCA cache is complete — rendering from cache (fast path).");
+            logService.Log("PCA cache complete — fast path render.");
             await PopulateImageItemsFromCacheAsync(vectors);
         }
         else
         {
-            logService.Log($"PCA cache incomplete ({vectors.Count(v => !v.PcaX.HasValue)} missing) — computing SVD...");
+            logService.Log($"PCA cache incomplete ({vectors.Count(v => !v.PcaX.HasValue)} missing) — SVD required.");
             await ComputeAndCachePcaAsync(vectors);
         }
 
@@ -452,7 +466,7 @@ public partial class MainViewModel : ObservableObject
         PcaProgress = 0;
 
         int dim = vectors.Count > 0 ? vectors[0].Vector.Length : 0;
-        logService.Log($"PCA: SVD on {vectors.Count} x {dim} matrix (Top-{SparseTopN})...");
+        logService.Log($"PCA: SVD on {vectors.Count} x {dim} (Top-{SparseTopN})...");
 
         var prog = new Progress<(int current, int total, string message)>(p =>
         {
@@ -475,7 +489,7 @@ public partial class MainViewModel : ObservableObject
             IsPcaComputing = false;
         }
 
-        logService.Log($"PCA complete — rendering {positions.Count} points...");
+        logService.Log($"PCA complete — rendering {positions.Count} points progressively...");
 
         ImageItems.Clear();
         ClusterItems.Clear();
