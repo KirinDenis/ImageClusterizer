@@ -23,4 +23,11 @@ public interface IVectorDatabase
     /// Called after PCA computation to cache positions for fast startup.
     /// </summary>
     Task SavePcaCoordinatesAsync(string filePath, float pcaX, float pcaY);
+
+    /// <summary>
+    /// Clears cached PCA coordinates (PcaX, PcaY) for all records.
+    /// Forces full SVD recompute on next load.
+    /// Called by RecalculatePcaCommand.
+    /// </summary>
+    Task ClearPcaCacheAsync();
 }
