@@ -1,4 +1,4 @@
-﻿using ImageClusterizer.Models;
+using ImageClusterizer.Models;
 using MathNet.Numerics.LinearAlgebra;
 using System;
 using System.Collections.Generic;
@@ -15,25 +15,20 @@ public class ClusteringService
 
         foreach (var vector in vectors)
         {
-            if (assigned.Contains(vector.FilePath))
-                continue;
+            if (assigned.Contains(vector.FilePath)) continue;
 
             var cluster = new ImageCluster
             {
                 ClusterId = clusters.Count,
-                Images = new List<ImageVector> { vector }
+                Images    = new List<ImageVector> { vector }
             };
-
             assigned.Add(vector.FilePath);
 
-            // Find similar
             foreach (var candidate in vectors)
             {
-                if (assigned.Contains(candidate.FilePath))
-                    continue;
+                if (assigned.Contains(candidate.FilePath)) continue;
 
                 var similarity = CosineSimilarity(vector.Vector, candidate.Vector);
-
                 if (similarity >= similarityThreshold)
                 {
                     cluster.Images.Add(candidate);
@@ -41,9 +36,7 @@ public class ClusteringService
                 }
             }
 
-            // Calulate center of cluster
             cluster.Centroid = CalculateCentroid(cluster.Images);
-
             clusters.Add(cluster);
         }
 
@@ -63,36 +56,32 @@ public class ClusteringService
             magnitudeB += b[i] * b[i];
         }
 
-        return dotProduct / (MathF.Sqrt(magnitudeA) * MathF.Sqrt(magnitudeB));
+        var denom = MathF.Sqrt(magnitudeA) * MathF.Sqrt(magnitudeB);
+        if (denom < 1e-10f) return 0f; // guard against zero-vector division
+
+        return dotProduct / denom;
     }
 
     private float[] CalculateCentroid(List<ImageVector> vectors)
     {
         var dimension = vectors[0].Vector.Length;
-        var centroid = new float[dimension];
+        var centroid  = new float[dimension];
 
         foreach (var vector in vectors)
-        {
             for (int i = 0; i < dimension; i++)
-            {
                 centroid[i] += vector.Vector[i];
-            }
-        }
 
         for (int i = 0; i < dimension; i++)
-        {
             centroid[i] /= vectors.Count;
-        }
 
         return centroid;
     }
 
     public List<ClusterPosition> CalculatePositions(
         List<ImageCluster> clusters,
-        int canvasWidth = 10000,
+        int canvasWidth  = 10000,
         int canvasHeight = 10000)
     {
-
         var allVectors = new List<float[]>();
         var vectorInfo = new List<VectorInfo>();
 
@@ -103,8 +92,8 @@ public class ClusteringService
                 allVectors.Add(cluster.Centroid);
                 vectorInfo.Add(new VectorInfo
                 {
-                    ClusterId = cluster.ClusterId,
-                    IsCentroid = true,
+                    ClusterId   = cluster.ClusterId,
+                    IsCentroid  = true,
                     ImageVector = null
                 });
             }
@@ -114,33 +103,29 @@ public class ClusteringService
                 allVectors.Add(image.Vector);
                 vectorInfo.Add(new VectorInfo
                 {
-                    ClusterId = cluster.ClusterId,
-                    IsCentroid = false,
+                    ClusterId   = cluster.ClusterId,
+                    IsCentroid  = false,
                     ImageVector = image
                 });
             }
         }
 
-        if (allVectors.Count == 0)
-            return new List<ClusterPosition>();
+        if (allVectors.Count == 0) return new List<ClusterPosition>();
 
-        // PCA reduction
+        // PCA reduction to 2D
         var positions2D = ReduceTo2D_PCA(allVectors);
-
-
-        var normalized = NormalizePositions(positions2D, canvasWidth, canvasHeight);
-
+        var normalized  = NormalizePositions(positions2D, canvasWidth, canvasHeight);
 
         var result = new List<ClusterPosition>();
         for (int i = 0; i < normalized.Length; i++)
         {
             result.Add(new ClusterPosition
             {
-                ClusterId = vectorInfo[i].ClusterId,
-                IsCentroid = vectorInfo[i].IsCentroid,
+                ClusterId   = vectorInfo[i].ClusterId,
+                IsCentroid  = vectorInfo[i].IsCentroid,
                 ImageVector = vectorInfo[i].ImageVector,
-                X = normalized[i][0],
-                Y = normalized[i][1]
+                X           = normalized[i][0],
+                Y           = normalized[i][1]
             });
         }
 
@@ -152,44 +137,45 @@ public class ClusteringService
         int n = vectors.Count;
         int d = vectors[0].Length;
 
+        // Edge case: single vector or single dimension — return zeros
+        if (n < 2 || d < 2)
+        {
+            return Enumerable.Range(0, n)
+                .Select(_ => new double[] { 0.0, 0.0 })
+                .ToArray();
+        }
 
         var matrixData = new double[n, d];
         for (int i = 0; i < n; i++)
-        {
             for (int j = 0; j < d; j++)
-            {
                 matrixData[i, j] = vectors[i][j];
-            }
-        }
 
-        var matrix = Matrix<double>.Build.DenseOfArray(matrixData);
-
-
+        var matrix      = Matrix<double>.Build.DenseOfArray(matrixData);
         var columnMeans = matrix.ColumnSums() / n;
+
+        // Center the matrix
         var centered = matrix.Clone();
-
         for (int i = 0; i < n; i++)
-        {
             for (int j = 0; j < d; j++)
-            {
                 centered[i, j] -= columnMeans[j];
-            }
-        }
 
-        // SVD
+        // SVD decomposition
         var svd = centered.Svd(computeVectors: true);
-        var u = svd.U;
-        var s = svd.S;
+        var u   = svd.U;
+        var s   = svd.S;
 
+        // Guard: SVD may return fewer singular values than 2 for degenerate matrices
+        // (e.g. all vectors identical, or rank-1 matrix)
+        double s0 = s.Count > 0 ? s[0] : 0.0;
+        double s1 = s.Count > 1 ? s[1] : 0.0;
 
+        // Also guard U dimensions — U is [n x n], but singular vectors may be fewer
         var result = new double[n][];
         for (int i = 0; i < n; i++)
         {
-            result[i] = new double[]
-            {
-                    u[i, 0] * s[0],
-                    u[i, 1] * s[1]
-            };
+            double x = u.RowCount > i && u.ColumnCount > 0 ? u[i, 0] * s0 : 0.0;
+            double y = u.RowCount > i && u.ColumnCount > 1 ? u[i, 1] * s1 : 0.0;
+            result[i] = new double[] { x, y };
         }
 
         return result;
@@ -210,14 +196,14 @@ public class ClusteringService
         if (rangeX < 0.0001) rangeX = 1;
         if (rangeY < 0.0001) rangeY = 1;
 
-        var padding = 0.05;
-        var usableWidth = width * (1 - 2 * padding);
+        var padding      = 0.05;
+        var usableWidth  = width  * (1 - 2 * padding);
         var usableHeight = height * (1 - 2 * padding);
 
         return positions.Select(p => new[]
         {
-                (p[0] - minX) / rangeX * usableWidth + width * padding,
-                (p[1] - minY) / rangeY * usableHeight + height * padding
-            }).ToArray();
+            (p[0] - minX) / rangeX * usableWidth  + width  * padding,
+            (p[1] - minY) / rangeY * usableHeight + height * padding
+        }).ToArray();
     }
 }
