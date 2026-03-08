@@ -4,6 +4,7 @@ using ImageClusterizer.Services;
 using ImageClusterizer.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using System;
 using System.IO;
 using System.Windows;
 
@@ -23,7 +24,7 @@ public partial class App : Application
 #if DEBUG
                 e.Handled = false;
 #else
-                     e.Handled = true;
+                e.Handled = true;
 #endif
                 File.WriteAllText(
                     Path.Combine(AppContext.BaseDirectory, "crash.log"),
@@ -32,10 +33,7 @@ public partial class App : Application
             };
 
             host = Host.CreateDefaultBuilder()
-                .ConfigureServices((context, services) =>
-                {
-                    ConfigureServices(services);
-                })
+                .ConfigureServices((context, services) => ConfigureServices(services))
                 .Build();
 
             Services = host.Services;
@@ -43,8 +41,7 @@ public partial class App : Application
         catch (Exception ex)
         {
             File.WriteAllText(
-                Path.Combine(Environment.GetFolderPath(
-                    Environment.SpecialFolder.Desktop), "crash.log"),
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "crash.log"),
                 ex.ToString());
             throw;
         }
@@ -52,43 +49,41 @@ public partial class App : Application
 
     private void ConfigureServices(IServiceCollection services)
     {
+        // StorageService owns all path resolution (data/vectors.db, thumbnails/)
+        services.AddSingleton<StorageService>();
+
+        // ResNet50 vectorizer
         services.AddSingleton<IVectorService>(sp =>
         {
-            var modelPath = Path.Combine(
-                AppContext.BaseDirectory,
-                "resnet50-v2-7.onnx");
+            var modelPath = Path.Combine(AppContext.BaseDirectory, "resnet50-v2-7.onnx");
             return new ResNetVectorizer(modelPath);
         });
 
+        // LiteDB store — database path comes from StorageService
         services.AddSingleton<IVectorDatabase>(sp =>
         {
-            var dbPath = Path.Combine(
-                AppContext.BaseDirectory,
-                "vectors.db");
-            return new LiteDbVectorStore(dbPath);
+            var storage = sp.GetRequiredService<StorageService>();
+            return new LiteDbVectorStore(storage.DatabasePath);
         });
 
         services.AddTransient<ImageScanner>();
         services.AddTransient<ClusteringService>();
         services.AddSingleton<MainViewModel>();
-        services.AddTransient<StorageService>();
         services.AddSingleton<MainWindow>();
     }
 
-    // OnLaunched → OnStartup в WPF
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
         try
         {
             mainWindow = Services?.GetRequiredService<MainWindow>();
-            mainWindow?.Show();  
+            mainWindow?.Show();
         }
         catch (Exception ex)
         {
             File.WriteAllText(
-                Path.Combine(Environment.GetFolderPath(
-                    Environment.SpecialFolder.Desktop), "crash.log"),
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "crash.log"),
                 ex.ToString());
             Shutdown();
         }
