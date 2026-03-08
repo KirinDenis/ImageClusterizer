@@ -49,6 +49,10 @@ public partial class App : Application
 
     private void ConfigureServices(IServiceCollection services)
     {
+        // Theme and log services — registered before ViewModel so they can be injected
+        services.AddSingleton<ThemeService>();
+        services.AddSingleton<LogService>();
+
         // StorageService owns all path resolution (data/vectors.db, thumbnails/)
         services.AddSingleton<StorageService>();
 
@@ -75,8 +79,13 @@ public partial class App : Application
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
+
         try
         {
+            // Apply saved theme before window is shown
+            var themeService = Services?.GetRequiredService<ThemeService>();
+            themeService?.LoadPreference();
+
             mainWindow = Services?.GetRequiredService<MainWindow>();
             mainWindow?.Show();
         }
