@@ -4,30 +4,20 @@ using System.Collections.Generic;
 
 namespace ImageClusterizer.Models
 {
-    /// <summary>
-    /// Specifies the type of vector extracted from the neural network
-    /// </summary>
     public enum VectorType
     {
-        /// <summary>2048-dimensional embedding from penultimate ResNet layer (better for similarity)</summary>
         Embedding,
-
-        /// <summary>1000-dimensional logit output from final ResNet classification layer</summary>
         Logit
     }
 
     public record ImageVector
     {
-        public string FilePath { get; init; }         // original image path (not stored in thumbnail path)
-        public float[] Vector { get; init; }          // embedding or logit vector from ResNet50
-        public VectorType VectorType { get; init; }   // type of vector stored
+        public string FilePath { get; init; }
+        public float[] Vector { get; init; }
+        public VectorType VectorType { get; init; }
         public DateTime ProcessedAt { get; init; }
         public long FileSize { get; init; }
-
-        // Thumbnail cache: path to 224x224 JPEG saved during scan
         public string? ThumbnailPath { get; init; }
-
-        // PCA 2D position cache: null = not yet computed
         public float? PcaX { get; init; }
         public float? PcaY { get; init; }
     }
@@ -36,7 +26,7 @@ namespace ImageClusterizer.Models
     {
         public int ClusterId { get; set; }
         public List<ImageVector> Images { get; set; } = new();
-        public float[] Centroid { get; set; } // center of cluster
+        public float[] Centroid { get; set; }
     }
 
     public record ScanProgress
@@ -44,7 +34,7 @@ namespace ImageClusterizer.Models
         public string CurrentFile { get; init; }
         public int ProcessedCount { get; init; }
         public int TotalCount { get; init; }
-        public ImageVector? NewVector { get; init; } // for UI refresh
+        public ImageVector? NewVector { get; init; }
     }
 
     public class VectorInfo
@@ -78,6 +68,15 @@ namespace ImageClusterizer.Models
         [ObservableProperty] private double x;
         [ObservableProperty] private double y;
         [ObservableProperty] private string filePath;
-        [ObservableProperty] private string thumbnailPath; // points to cached thumbnail, not original
+        [ObservableProperty] private string thumbnailPath;
+
+        /// <summary>File size in bytes used to compute dot radius on the map.</summary>
+        [ObservableProperty] private long fileSize;
+
+        /// <summary>
+        /// Visual radius of the dot. Set by MainViewModel based on FileSize relative to dataset median.
+        /// Range 6..22, default 14.
+        /// </summary>
+        [ObservableProperty] private double dotRadius = 14.0;
     }
 }
