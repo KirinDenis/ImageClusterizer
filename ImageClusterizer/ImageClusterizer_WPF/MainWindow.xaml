@@ -7,28 +7,24 @@
         xmlns:models="clr-namespace:ImageClusterizer.Models"
         mc:Ignorable="d"
         Title="AI :: Image Clusterizer"
-        Width="1200" Height="800"
-        WindowStartupLocation="CenterScreen">
+        Width="1400" Height="900"
+        WindowStartupLocation="CenterScreen"
+        Background="{DynamicResource AppBackground}">
 
-    <Grid>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-        </Grid.RowDefinitions>
+    <DockPanel LastChildFill="True">
 
-        <!-- Toolbar: scan controls, vector type selection, clear data -->
-        <ToolBar Grid.Row="0" Height="48">
+        <!-- ===== TOOLBAR ===== -->
+        <ToolBar DockPanel.Dock="Top" Height="48"
+                 Background="{DynamicResource ToolBarBackground}">
 
             <Button ToolTip="Select folder and scan images"
                     Command="{Binding ViewModel.StartScanImagesCommand}"
                     IsEnabled="{Binding ViewModel.IsNotScanning}">
                 <StackPanel Orientation="Horizontal">
                     <TextBlock Text="&#x1F4C2;" FontSize="16" Margin="0,0,6,0"/>
-                    <TextBlock Text="Select location to scan images" VerticalAlignment="Center"/>
+                    <TextBlock Text="Scan folder" VerticalAlignment="Center"/>
                 </StackPanel>
             </Button>
-
             <Separator/>
 
             <Button ToolTip="Stop scanning"
@@ -36,10 +32,9 @@
                     IsEnabled="{Binding ViewModel.IsScanning}">
                 <StackPanel Orientation="Horizontal">
                     <TextBlock Text="&#x23F9;" FontSize="16" Margin="0,0,6,0"/>
-                    <TextBlock Text="Stop scanning" VerticalAlignment="Center"/>
+                    <TextBlock Text="Stop" VerticalAlignment="Center"/>
                 </StackPanel>
             </Button>
-
             <Separator/>
 
             <Button ToolTip="Reload existing vectors from database"
@@ -47,173 +42,559 @@
                     IsEnabled="{Binding ViewModel.IsNotScanning}">
                 <StackPanel Orientation="Horizontal">
                     <TextBlock Text="&#x1F504;" FontSize="16" Margin="0,0,6,0"/>
-                    <TextBlock Text="Reload from database" VerticalAlignment="Center"/>
+                    <TextBlock Text="Reload DB" VerticalAlignment="Center"/>
                 </StackPanel>
             </Button>
-
             <Separator/>
 
             <!-- Vector type selection -->
-            <TextBlock Text="Vector type:" VerticalAlignment="Center" Margin="8,0,4,0"/>
-            <ComboBox Width="130"
-                      VerticalAlignment="Center"
+            <TextBlock Text="Vector:" VerticalAlignment="Center" Margin="8,0,4,0"
+                       Foreground="{DynamicResource AppText}"/>
+            <ComboBox Width="110" VerticalAlignment="Center"
                       ItemsSource="{Binding ViewModel.AvailableVectorTypes}"
                       SelectedItem="{Binding ViewModel.SelectedVectorType, Mode=TwoWay}"
                       IsEnabled="{Binding ViewModel.IsNotScanning}"
                       ToolTip="Embedding (2048D) - better for similarity. Logit (1000D) - classification output."/>
-
             <Separator/>
 
-            <!-- Clear all data button -->
-            <Button ToolTip="Delete all stored vectors, thumbnails and cached data (original files are NOT affected)"
+            <!-- Clear all data -->
+            <Button ToolTip="Delete all stored vectors, thumbnails and cached data"
                     Command="{Binding ViewModel.ClearAllDataCommand}"
                     IsEnabled="{Binding ViewModel.IsNotScanning}">
                 <StackPanel Orientation="Horizontal">
                     <TextBlock Text="&#x1F5D1;" FontSize="16" Margin="0,0,6,0"/>
-                    <TextBlock Text="Clear all data" VerticalAlignment="Center"/>
+                    <TextBlock Text="Clear data" VerticalAlignment="Center"/>
                 </StackPanel>
             </Button>
+            <Separator/>
 
+            <!-- Cockpit toggle -->
+            <Button ToolTip="Toggle advanced settings panel"
+                    Command="{Binding ViewModel.ToggleCockpitCommand}">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="&#x2699;" FontSize="16" Margin="0,0,4,0"/>
+                    <TextBlock Text="Advanced" VerticalAlignment="Center"/>
+                </StackPanel>
+            </Button>
+            <Separator/>
+
+            <!-- Theme toggle — right side -->
+            <Button ToolTip="Toggle dark/light theme"
+                    Command="{Binding ViewModel.ToggleThemeCommand}">
+                <TextBlock Text="{Binding ViewModel.ThemeIcon}" FontSize="14"/>
+            </Button>
         </ToolBar>
 
-        <!-- Scan progress panel -->
-        <StackPanel Grid.Row="1" Margin="20,10"
-                    Visibility="{Binding ViewModel.ProgressVisibility, Mode=OneWay}">
-            <TextBlock Margin="0,0,0,4">
-                <Run Text="Processing: "/>
-                <Run Text="{Binding ViewModel.CurrentFile, Mode=OneWay}"/>
-            </TextBlock>
-            <ProgressBar Value="{Binding ViewModel.Progress, Mode=OneWay}"
-                         Maximum="100" Height="8" Margin="0,0,0,4"/>
-            <TextBlock>
-                <Run Text="{Binding ViewModel.ProcessedCountText, Mode=OneWay}"/>
-                <Run Text=" / "/>
-                <Run Text="{Binding ViewModel.TotalCountText, Mode=OneWay}"/>
-                <Run Text=" images processed"/>
-            </TextBlock>
-        </StackPanel>
+        <!-- ===== STATUS BAR ===== -->
+        <DockPanel DockPanel.Dock="Bottom" Height="24"
+                   Background="{DynamicResource StatusBarBackground}">
+            <!-- Left side info -->
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="8,0">
+                <TextBlock Foreground="White" FontSize="11" VerticalAlignment="Center">
+                    <Run Text="&#x1F5BC; "/>
+                    <Run Text="{Binding ViewModel.VectorCount, Mode=OneWay}"/>
+                    <Run Text=" images  |  "/>
+                    <Run Text="&#x1F5C2; "/>
+                    <Run Text="{Binding ViewModel.ClusterCount, Mode=OneWay}"/>
+                    <Run Text=" clusters  |  "/>
+                    <Run Text="{Binding ViewModel.SelectedVectorType, Mode=OneWay}"/>
+                </TextBlock>
+            </StackPanel>
+            <!-- Right side: GPU + DB size -->
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right"
+                        VerticalAlignment="Center" Margin="0,0,8,0">
+                <!-- GPU LED -->
+                <Ellipse Width="8" Height="8" VerticalAlignment="Center" Margin="0,0,4,0">
+                    <Ellipse.Style>
+                        <Style TargetType="Ellipse">
+                            <Setter Property="Fill" Value="{DynamicResource IndicatorInactive}"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding ViewModel.GpuAvailable}" Value="True">
+                                    <Setter Property="Fill" Value="{DynamicResource IndicatorActive}"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Ellipse.Style>
+                </Ellipse>
+                <TextBlock Foreground="White" FontSize="11" VerticalAlignment="Center"
+                           Text="{Binding ViewModel.GpuName, Mode=OneWay}" Margin="0,0,12,0"/>
+                <TextBlock Foreground="White" FontSize="11" VerticalAlignment="Center">
+                    <Run Text="&#x1F4BE; "/>
+                    <Run Text="{Binding ViewModel.DatabaseSizeText, Mode=OneWay}"/>
+                </TextBlock>
+            </StackPanel>
+        </DockPanel>
 
-        <!-- Main content tabs -->
-        <TabControl Grid.Row="2">
+        <!-- ===== CONSOLE LOG PANEL ===== -->
+        <Border DockPanel.Dock="Bottom"
+                Background="{DynamicResource ConsoleBackground}"
+                BorderThickness="0,1,0,0"
+                BorderBrush="{DynamicResource AppBorder}"
+                x:Name="ConsoleBorder">
+            <Border.Style>
+                <Style TargetType="Border">
+                    <Setter Property="Height" Value="24"/>
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding ViewModel.IsConsoleExpanded}" Value="True">
+                            <Setter Property="Height" Value="144"/>
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </Border.Style>
+            <DockPanel>
+                <!-- Console header -->
+                <DockPanel DockPanel.Dock="Top" Height="24" Margin="4,0">
+                    <Button DockPanel.Dock="Right" Content="Clear" FontSize="10"
+                            Command="{Binding ViewModel.ClearConsoleCommand}"
+                            Padding="6,0" Margin="4,2"/>
+                    <Button DockPanel.Dock="Right" FontSize="10" Padding="6,0" Margin="4,2"
+                            Command="{Binding ViewModel.ToggleConsoleCommand}">
+                        <Button.Style>
+                            <Style TargetType="Button">
+                                <Setter Property="Content" Value="&#x25B2;"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding ViewModel.IsConsoleExpanded}" Value="False">
+                                        <Setter Property="Content" Value="&#x25BC;"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+                    <TextBlock Text="&#x25B6; Console" FontSize="11"
+                               Foreground="{DynamicResource ConsoleForeground}"
+                               FontFamily="Consolas" VerticalAlignment="Center"/>
+                </DockPanel>
 
-            <!-- PCA scatter view (primary) -->
-            <TabItem Header="Map">
-                <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
-                    <Canvas Width="{Binding ViewModel.CanvasWidth}" Height="{Binding ViewModel.CanvasHeight}">
+                <!-- Console log lines (scrollable) -->
+                <ScrollViewer x:Name="ConsoleScrollViewer"
+                              VerticalScrollBarVisibility="Auto"
+                              HorizontalScrollBarVisibility="Auto"
+                              Visibility="{Binding ViewModel.IsConsoleExpanded,
+                                           Converter={x:Static local:BoolToVisibilityConverter.Instance}}">
+                    <ItemsControl ItemsSource="{Binding ViewModel.ConsoleLines, Mode=OneWay}"
+                                  FontFamily="Consolas" FontSize="11"
+                                  Foreground="{DynamicResource ConsoleForeground}"
+                                  Background="{DynamicResource ConsoleBackground}"
+                                  Padding="4,2"/>
+                </ScrollViewer>
+            </DockPanel>
+        </Border>
 
-                        <!-- Image dots -->
-                        <ItemsControl ItemsSource="{Binding ViewModel.ImageItems, Mode=OneWay}">
+        <!-- ===== COCKPIT ADVANCED SETTINGS PANEL ===== -->
+        <Border DockPanel.Dock="Top"
+                Background="{DynamicResource CockpitBackground}"
+                BorderThickness="0,0,0,1"
+                BorderBrush="{DynamicResource AppBorder}">
+            <Border.Style>
+                <Style TargetType="Border">
+                    <Setter Property="Height" Value="0"/>
+                    <Setter Property="Visibility" Value="Collapsed"/>
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding ViewModel.IsCockpitExpanded}" Value="True">
+                            <Setter Property="Height" Value="Auto"/>
+                            <Setter Property="Visibility" Value="Visible"/>
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </Border.Style>
+            <Grid Margin="12,8">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Group A: Compute Hardware -->
+                <Border Grid.Column="0" Margin="4" Padding="8"
+                        BorderBrush="{DynamicResource CockpitGroupBorder}" BorderThickness="1" CornerRadius="4">
+                    <StackPanel>
+                        <TextBlock Text="Compute Hardware" FontWeight="Bold" FontSize="11"
+                                   Foreground="{DynamicResource AppText}" Margin="0,0,0,6"/>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                            <Ellipse Width="10" Height="10" VerticalAlignment="Center" Margin="0,0,6,0">
+                                <Ellipse.Style>
+                                    <Style TargetType="Ellipse">
+                                        <Setter Property="Fill" Value="{DynamicResource IndicatorInactive}"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding ViewModel.GpuAvailable}" Value="True">
+                                                <Setter Property="Fill" Value="{DynamicResource IndicatorActive}"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Ellipse.Style>
+                            </Ellipse>
+                            <TextBlock Text="{Binding ViewModel.GpuName, Mode=OneWay}" FontSize="11"
+                                       Foreground="{DynamicResource AppText}" VerticalAlignment="Center"/>
+                        </StackPanel>
+                        <CheckBox Content="Use GPU" IsChecked="{Binding ViewModel.UseGpu, Mode=TwoWay}"
+                                  IsEnabled="{Binding ViewModel.GpuAvailable}"
+                                  Foreground="{DynamicResource AppText}" FontSize="11" Margin="0,2"/>
+                        <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                            <TextBlock Text="Threads: " FontSize="11" Foreground="{DynamicResource AppTextSecondary}"
+                                       VerticalAlignment="Center"/>
+                            <TextBlock FontSize="11" Foreground="{DynamicResource AppText}" VerticalAlignment="Center">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Text" Value="{Binding ViewModel.ThreadCount}"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding ViewModel.ThreadCount}" Value="0">
+                                                <Setter Property="Text" Value="Auto"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <!-- Group B: Vector Compression -->
+                <Border Grid.Column="1" Margin="4" Padding="8"
+                        BorderBrush="{DynamicResource CockpitGroupBorder}" BorderThickness="1" CornerRadius="4">
+                    <StackPanel>
+                        <TextBlock Text="Vector Compression" FontWeight="Bold" FontSize="11"
+                                   Foreground="{DynamicResource AppText}" Margin="0,0,0,6"/>
+                        <Slider Minimum="8" Maximum="2048" Value="{Binding ViewModel.SparseTopN, Mode=TwoWay}"
+                                SmallChange="1" LargeChange="256"
+                                ToolTip="Lower = faster PCA and clustering, higher = better accuracy"/>
+                        <TextBlock FontSize="11" Foreground="{DynamicResource AppText}" Margin="0,4,0,2">
+                            <Run Text="Top-"/>
+                            <Run Text="{Binding ViewModel.SparseTopN, Mode=OneWay}"/>
+                            <Run Text=" / 2048"/>
+                        </TextBlock>
+                        <TextBlock FontSize="10" Foreground="{DynamicResource AppTextSecondary}">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Text" Value="Balanced"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding ViewModel.SparseTopN}" Value="2048">
+                                            <Setter Property="Text" Value="Full quality (slowest)"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                    </StackPanel>
+                </Border>
+
+                <!-- Group C: Clustering Parameters -->
+                <Border Grid.Column="2" Margin="4" Padding="8"
+                        BorderBrush="{DynamicResource CockpitGroupBorder}" BorderThickness="1" CornerRadius="4">
+                    <StackPanel>
+                        <TextBlock Text="Clustering" FontWeight="Bold" FontSize="11"
+                                   Foreground="{DynamicResource AppText}" Margin="0,0,0,6"/>
+                        <Slider Minimum="0.50" Maximum="0.99" SmallChange="0.01" LargeChange="0.1"
+                                Value="{Binding ViewModel.SimilarityThreshold, Mode=TwoWay}"
+                                ToolTip="Higher = stricter grouping (more clusters)"/>
+                        <TextBlock FontSize="11" Foreground="{DynamicResource AppText}" Margin="0,4,0,2">
+                            <Run Text="Threshold: "/>
+                            <Run Text="{Binding ViewModel.SimilarityThreshold, Mode=OneWay, StringFormat=F2}"/>
+                        </TextBlock>
+                        <TextBlock FontSize="10" Foreground="{DynamicResource AppTextSecondary}"
+                                   Text="Higher = more clusters, stricter match"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Group D: Live Telemetry -->
+                <Border Grid.Column="3" Margin="4" Padding="8"
+                        BorderBrush="{DynamicResource CockpitGroupBorder}" BorderThickness="1" CornerRadius="4">
+                    <StackPanel>
+                        <TextBlock Text="Live Telemetry" FontWeight="Bold" FontSize="11"
+                                   Foreground="{DynamicResource AppText}" Margin="0,0,0,6"/>
+                        <TextBlock FontSize="11" Foreground="{DynamicResource AppText}">
+                            <Run Text="&#x1F5BC; Images: "/>
+                            <Run Text="{Binding ViewModel.VectorCount, Mode=OneWay}"/>
+                        </TextBlock>
+                        <TextBlock FontSize="11" Foreground="{DynamicResource AppText}">
+                            <Run Text="&#x1F5C2; Clusters: "/>
+                            <Run Text="{Binding ViewModel.ClusterCount, Mode=OneWay}"/>
+                        </TextBlock>
+                        <TextBlock FontSize="11" Foreground="{DynamicResource AppText}">
+                            <Run Text="&#x1F4BE; DB: "/>
+                            <Run Text="{Binding ViewModel.DatabaseSizeText, Mode=OneWay}"/>
+                        </TextBlock>
+                        <TextBlock FontSize="11" Foreground="{DynamicResource AppText}">
+                            <Run Text="&#x23F1; Scan: "/>
+                            <Run Text="{Binding ViewModel.LastScanDuration, Mode=OneWay}"/>
+                        </TextBlock>
+                    </StackPanel>
+                </Border>
+            </Grid>
+        </Border>
+
+        <!-- ===== SCAN PROGRESS PANEL ===== -->
+        <Border DockPanel.Dock="Top"
+                Visibility="{Binding ViewModel.ProgressVisibility, Mode=OneWay}"
+                Background="{DynamicResource AppSurface}"
+                BorderThickness="0,0,0,1"
+                BorderBrush="{DynamicResource AppBorder}"
+                Padding="12,6">
+            <StackPanel>
+                <TextBlock Margin="0,0,0,3" Foreground="{DynamicResource AppText}" FontSize="11">
+                    <Run Text="Processing: "/>
+                    <Run Text="{Binding ViewModel.CurrentFile, Mode=OneWay}"/>
+                    <Run Text="  "/>
+                    <Run Text="{Binding ViewModel.ProcessedCountText, Mode=OneWay}"/>
+                    <Run Text=" / "/>
+                    <Run Text="{Binding ViewModel.TotalCountText, Mode=OneWay}"/>
+                </TextBlock>
+                <ProgressBar Value="{Binding ViewModel.Progress, Mode=OneWay}"
+                             Maximum="100" Height="6"
+                             Foreground="{DynamicResource AppAccent}"/>
+            </StackPanel>
+        </Border>
+
+        <!-- ===== MAIN CONTENT TABS ===== -->
+        <TabControl Background="{DynamicResource AppBackground}">
+
+            <!-- TAB 1: MAP (PCA scatter — primary) -->
+            <TabItem Header="&#x1F5FA; Map">
+                <DockPanel>
+                    <!-- Tab toolbar: PCA controls -->
+                    <Border DockPanel.Dock="Top"
+                            Background="{DynamicResource AppSurface}"
+                            BorderThickness="0,0,0,1"
+                            BorderBrush="{DynamicResource AppBorder}"
+                            Padding="8,4">
+                        <StackPanel Orientation="Horizontal">
+                            <Button Content="&#x27F3; Recalculate PCA"
+                                    Command="{Binding ViewModel.RecalculatePcaCommand}"
+                                    Margin="0,0,12,0" Padding="8,3"/>
+                            <!-- PCA progress indicator -->
+                            <ProgressBar IsIndeterminate="True" Width="120" Height="16"
+                                         Margin="0,0,8,0" VerticalAlignment="Center"
+                                         Foreground="{DynamicResource AppAccent}">
+                                <ProgressBar.Style>
+                                    <Style TargetType="ProgressBar">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding ViewModel.IsPcaComputing}" Value="True">
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </ProgressBar.Style>
+                            </ProgressBar>
+                            <TextBlock VerticalAlignment="Center" FontSize="11"
+                                       Foreground="{DynamicResource AppTextSecondary}">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding ViewModel.IsPcaComputing}" Value="True">
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                                <Run Text="Computing PCA... "/>
+                                <Run Text="{Binding ViewModel.PcaProgress, Mode=OneWay}"/>
+                                <Run Text="%"/>
+                            </TextBlock>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Scatter canvas -->
+                    <ScrollViewer HorizontalScrollBarVisibility="Auto"
+                                  VerticalScrollBarVisibility="Auto"
+                                  Background="{DynamicResource AppBackground}">
+                        <Canvas Width="{Binding ViewModel.CanvasWidth}"
+                                Height="{Binding ViewModel.CanvasHeight}">
+                            <!-- Image thumbnail dots -->
+                            <ItemsControl ItemsSource="{Binding ViewModel.ImageItems, Mode=OneWay}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <Canvas/>
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemContainerStyle>
+                                    <Style TargetType="ContentPresenter">
+                                        <Setter Property="Canvas.Left" Value="{Binding X}"/>
+                                        <Setter Property="Canvas.Top"  Value="{Binding Y}"/>
+                                    </Style>
+                                </ItemsControl.ItemContainerStyle>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate DataType="{x:Type models:ImageVisualItem}">
+                                        <Border Width="20" Height="20" CornerRadius="10"
+                                                BorderBrush="{DynamicResource AppBorder}"
+                                                BorderThickness="1"
+                                                ToolTipService.ShowDuration="10000">
+                                            <Border.Background>
+                                                <ImageBrush ImageSource="{Binding ThumbnailPath}"
+                                                            Stretch="UniformToFill"/>
+                                            </Border.Background>
+                                            <Border.ToolTip>
+                                                <ToolTip>
+                                                    <StackPanel>
+                                                        <Image Source="{Binding ThumbnailPath}"
+                                                               Width="150" Height="150"
+                                                               Stretch="Uniform" Margin="4"/>
+                                                        <TextBlock Text="{Binding FilePath}"
+                                                                   MaxWidth="200" TextWrapping="Wrap"/>
+                                                    </StackPanel>
+                                                </ToolTip>
+                                            </Border.ToolTip>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+
+                            <!-- Cluster centroids -->
+                            <ItemsControl ItemsSource="{Binding ViewModel.ClusterItems, Mode=OneWay}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <Canvas/>
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemContainerStyle>
+                                    <Style TargetType="ContentPresenter">
+                                        <Setter Property="Canvas.Left" Value="{Binding X}"/>
+                                        <Setter Property="Canvas.Top"  Value="{Binding Y}"/>
+                                    </Style>
+                                </ItemsControl.ItemContainerStyle>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate DataType="{x:Type models:ClusterVisualItem}">
+                                        <Grid Width="60" Height="60">
+                                            <Ellipse Fill="{DynamicResource AppAccent}"
+                                                     Opacity="0.6"
+                                                     Stroke="{DynamicResource AppAccentHover}"
+                                                     StrokeThickness="2"/>
+                                            <TextBlock Text="{Binding ClusterId}"
+                                                       FontSize="16" FontWeight="Bold"
+                                                       Foreground="White"
+                                                       HorizontalAlignment="Center"
+                                                       VerticalAlignment="Center"/>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </Canvas>
+                    </ScrollViewer>
+                </DockPanel>
+            </TabItem>
+
+            <!-- TAB 2: CLUSTERS (lazy cosine similarity) -->
+            <TabItem>
+                <TabItem.Header>
+                    <TextBlock>
+                        <Run Text="&#x1F517; Clusters ("/>
+                        <Run Text="{Binding ViewModel.ClusterCount, Mode=OneWay}"/>
+                        <Run Text=")"/>
+                    </TextBlock>
+                </TabItem.Header>
+                <DockPanel>
+                    <!-- Tab toolbar: Compute clusters controls -->
+                    <Border DockPanel.Dock="Top"
+                            Background="{DynamicResource AppSurface}"
+                            BorderThickness="0,0,0,1"
+                            BorderBrush="{DynamicResource AppBorder}"
+                            Padding="8,4">
+                        <StackPanel Orientation="Horizontal">
+                            <Button Content="&#x25B6; Compute clusters"
+                                    Command="{Binding ViewModel.ComputeClustersCommand}"
+                                    Margin="0,0,12,0" Padding="8,3"/>
+                            <ProgressBar IsIndeterminate="True" Width="120" Height="16"
+                                         Margin="0,0,8,0" VerticalAlignment="Center"
+                                         Foreground="{DynamicResource AppAccent}">
+                                <ProgressBar.Style>
+                                    <Style TargetType="ProgressBar">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding ViewModel.IsClusterComputing}" Value="True">
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </ProgressBar.Style>
+                            </ProgressBar>
+                            <TextBlock Text="Computing..." VerticalAlignment="Center" FontSize="11"
+                                       Foreground="{DynamicResource AppTextSecondary}">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding ViewModel.IsClusterComputing}" Value="True">
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Empty state -->
+                    <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center"
+                               FontSize="16" Foreground="{DynamicResource AppTextSecondary}"
+                               TextAlignment="Center">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding ViewModel.ClusterCount}" Value="0">
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                        <Run Text="&#x1F517;&#xA;"/>
+                        <Run Text="No clusters computed yet.&#xA;Click 'Compute clusters' to group similar images."/>
+                    </TextBlock>
+
+                    <!-- Cluster grid -->
+                    <ScrollViewer VerticalScrollBarVisibility="Auto"
+                                  Background="{DynamicResource AppBackground}">
+                        <ItemsControl ItemsSource="{Binding ViewModel.Clusters, Mode=OneWay}" Margin="12">
                             <ItemsControl.ItemsPanel>
                                 <ItemsPanelTemplate>
-                                    <Canvas/>
+                                    <WrapPanel/>
                                 </ItemsPanelTemplate>
                             </ItemsControl.ItemsPanel>
-                            <ItemsControl.ItemContainerStyle>
-                                <Style TargetType="ContentPresenter">
-                                    <Setter Property="Canvas.Left" Value="{Binding X}"/>
-                                    <Setter Property="Canvas.Top"  Value="{Binding Y}"/>
-                                </Style>
-                            </ItemsControl.ItemContainerStyle>
                             <ItemsControl.ItemTemplate>
-                                <DataTemplate DataType="{x:Type models:ImageVisualItem}">
-                                    <Border Width="20" Height="20" CornerRadius="10"
-                                            BorderBrush="Gray" BorderThickness="1"
-                                            ToolTipService.ShowDuration="10000">
-                                        <Border.Background>
-                                            <ImageBrush ImageSource="{Binding ThumbnailPath}" Stretch="UniformToFill"/>
-                                        </Border.Background>
-                                        <Border.ToolTip>
-                                            <ToolTip>
-                                                <StackPanel>
-                                                    <Image Source="{Binding ThumbnailPath}"
-                                                           Width="150" Height="150"
-                                                           Stretch="Uniform" Margin="4"/>
-                                                    <TextBlock Text="{Binding FilePath}"
-                                                               MaxWidth="200" TextWrapping="Wrap"/>
-                                                </StackPanel>
-                                            </ToolTip>
-                                        </Border.ToolTip>
+                                <DataTemplate DataType="{x:Type models:ImageCluster}">
+                                    <Border BorderBrush="{DynamicResource AppBorder}"
+                                            Background="{DynamicResource AppSurface}"
+                                            BorderThickness="1" CornerRadius="6"
+                                            Padding="10" Width="280" Margin="6"
+                                            VerticalAlignment="Top">
+                                        <StackPanel>
+                                            <TextBlock FontSize="13" FontWeight="SemiBold"
+                                                       Foreground="{DynamicResource AppText}"
+                                                       Margin="0,0,0,2">
+                                                <Run Text="Cluster #"/>
+                                                <Run Text="{Binding ClusterId}"/>
+                                            </TextBlock>
+                                            <TextBlock FontSize="11" Margin="0,0,0,6"
+                                                       Foreground="{DynamicResource AppTextSecondary}">
+                                                <Run Text="{Binding Images.Count}"/>
+                                                <Run Text=" images"/>
+                                            </TextBlock>
+                                            <ItemsControl ItemsSource="{Binding Images}" MaxHeight="180">
+                                                <ItemsControl.ItemsPanel>
+                                                    <ItemsPanelTemplate>
+                                                        <WrapPanel/>
+                                                    </ItemsPanelTemplate>
+                                                </ItemsControl.ItemsPanel>
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate DataType="{x:Type models:ImageVector}">
+                                                        <Image Source="{Binding ThumbnailPath}"
+                                                               Width="72" Height="72"
+                                                               Stretch="UniformToFill"
+                                                               Margin="2"
+                                                               ToolTip="{Binding FilePath}"/>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                        </StackPanel>
                                     </Border>
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
-
-                        <!-- Cluster centroids -->
-                        <ItemsControl ItemsSource="{Binding ViewModel.ClusterItems, Mode=OneWay}">
-                            <ItemsControl.ItemsPanel>
-                                <ItemsPanelTemplate>
-                                    <Canvas/>
-                                </ItemsPanelTemplate>
-                            </ItemsControl.ItemsPanel>
-                            <ItemsControl.ItemContainerStyle>
-                                <Style TargetType="ContentPresenter">
-                                    <Setter Property="Canvas.Left" Value="{Binding X}"/>
-                                    <Setter Property="Canvas.Top"  Value="{Binding Y}"/>
-                                </Style>
-                            </ItemsControl.ItemContainerStyle>
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate DataType="{x:Type models:ClusterVisualItem}">
-                                    <Grid Width="60" Height="60">
-                                        <Ellipse Fill="#A07ACCAA" Stroke="#A07ACCAA" StrokeThickness="2"/>
-                                        <TextBlock Text="{Binding ClusterId}"
-                                                   FontSize="16" FontWeight="Bold"
-                                                   Foreground="White"
-                                                   HorizontalAlignment="Center"
-                                                   VerticalAlignment="Center"/>
-                                        <Grid.ToolTip>
-                                            <ToolTip>
-                                                <TextBlock Text="{Binding Label}"/>
-                                            </ToolTip>
-                                        </Grid.ToolTip>
-                                    </Grid>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-
-                    </Canvas>
-                </ScrollViewer>
-            </TabItem>
-
-            <!-- Cosine similarity cluster grid view (secondary) -->
-            <TabItem Header="Clusters">
-                <ScrollViewer VerticalScrollBarVisibility="Auto">
-                    <ItemsControl ItemsSource="{Binding ViewModel.Clusters, Mode=OneWay}" Margin="20">
-                        <ItemsControl.ItemsPanel>
-                            <ItemsPanelTemplate>
-                                <WrapPanel/>
-                            </ItemsPanelTemplate>
-                        </ItemsControl.ItemsPanel>
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate DataType="{x:Type models:ImageCluster}">
-                                <Border BorderBrush="#CCCCCC" BorderThickness="1"
-                                        CornerRadius="8" Padding="12"
-                                        Width="300" Margin="8" VerticalAlignment="Top">
-                                    <StackPanel>
-                                        <TextBlock Text="{Binding ClusterId}"
-                                                   FontSize="16" FontWeight="SemiBold" Margin="0,0,0,4"/>
-                                        <TextBlock Text="{Binding Images.Count}" Margin="0,0,0,8"/>
-                                        <ItemsControl ItemsSource="{Binding Images}" MaxHeight="200">
-                                            <ItemsControl.ItemsPanel>
-                                                <ItemsPanelTemplate>
-                                                    <WrapPanel/>
-                                                </ItemsPanelTemplate>
-                                            </ItemsControl.ItemsPanel>
-                                            <ItemsControl.ItemTemplate>
-                                                <DataTemplate DataType="{x:Type models:ImageVector}">
-                                                    <Image Source="{Binding ThumbnailPath}"
-                                                           Width="80" Height="80"
-                                                           Stretch="UniformToFill" Margin="2"/>
-                                                </DataTemplate>
-                                            </ItemsControl.ItemTemplate>
-                                        </ItemsControl>
-                                    </StackPanel>
-                                </Border>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
-                </ScrollViewer>
+                    </ScrollViewer>
+                </DockPanel>
             </TabItem>
 
         </TabControl>
-    </Grid>
+    </DockPanel>
 </Window>
