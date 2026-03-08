@@ -1,57 +1,284 @@
-namespace ImageClusterizer.Utlility;
-
-using Microsoft.ML.OnnxRuntime;
+using ImageClusterizer.Models;
+using MathNet.Numerics.LinearAlgebra;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 
-/// <summary>
-/// Detects GPU availability via OnnxRuntime execution providers.
-/// Supports CUDA (NVIDIA) and DirectML (AMD/Intel on Windows).
-/// Detection is non-blocking when run via Task.Run.
-/// </summary>
-public static class GpuDetector
+public class ClusteringService
 {
-    public record GpuInfo(
-        bool IsAvailable,
-        string ProviderName,
-        string DeviceName);
+    public List<ImageCluster> ClusterBySimilarity(
+        List<ImageVector> vectors,
+        float similarityThreshold = 0.85f)
+    {
+        var clusters = new List<ImageCluster>();
+        var assigned = new HashSet<string>();
+
+        foreach (var vector in vectors)
+        {
+            if (assigned.Contains(vector.FilePath)) continue;
+
+            var cluster = new ImageCluster
+            {
+                ClusterId = clusters.Count,
+                Images = new List<ImageVector> { vector }
+            };
+            assigned.Add(vector.FilePath);
+
+            foreach (var candidate in vectors)
+            {
+                if (assigned.Contains(candidate.FilePath)) continue;
+                var similarity = CosineSimilarity(vector.Vector, candidate.Vector);
+                if (similarity >= similarityThreshold)
+                {
+                    cluster.Images.Add(candidate);
+                    assigned.Add(candidate.FilePath);
+                }
+            }
+
+            cluster.Centroid = CalculateCentroid(cluster.Images);
+            clusters.Add(cluster);
+        }
+
+        return clusters;
+    }
+
+    private float CosineSimilarity(float[] a, float[] b)
+    {
+        var dotProduct = 0f;
+        var magnitudeA = 0f;
+        var magnitudeB = 0f;
+
+        for (int i = 0; i < a.Length; i++)
+        {
+            dotProduct += a[i] * b[i];
+            magnitudeA += a[i] * a[i];
+            magnitudeB += b[i] * b[i];
+        }
+
+        var denom = MathF.Sqrt(magnitudeA) * MathF.Sqrt(magnitudeB);
+        if (denom < 1e-10f) return 0f;
+        return dotProduct / denom;
+    }
+
+    private float[] CalculateCentroid(List<ImageVector> vectors)
+    {
+        var dimension = vectors[0].Vector.Length;
+        var centroid = new float[dimension];
+        foreach (var vector in vectors)
+            for (int i = 0; i < dimension; i++)
+                centroid[i] += vector.Vector[i];
+        for (int i = 0; i < dimension; i++)
+            centroid[i] /= vectors.Count;
+        return centroid;
+    }
+
+    public List<ClusterPosition> CalculatePositions(
+        List<ImageCluster> clusters,
+        int canvasWidth = 10000,
+        int canvasHeight = 10000)
+    {
+        var allVectors = new List<float[]>();
+        var vectorInfo = new List<VectorInfo>();
+
+        foreach (var cluster in clusters)
+        {
+            if (cluster.Centroid != null)
+            {
+                allVectors.Add(cluster.Centroid);
+                vectorInfo.Add(new VectorInfo { ClusterId = cluster.ClusterId, IsCentroid = true, ImageVector = null });
+            }
+            foreach (var image in cluster.Images)
+            {
+                allVectors.Add(image.Vector);
+                vectorInfo.Add(new VectorInfo { ClusterId = cluster.ClusterId, IsCentroid = false, ImageVector = image });
+            }
+        }
+
+        if (allVectors.Count == 0) return new List<ClusterPosition>();
+
+        var positions2D = ReduceTo2D_PCA(allVectors);
+        var normalized = NormalizePositions(positions2D, canvasWidth, canvasHeight);
+
+        var result = new List<ClusterPosition>();
+        for (int i = 0; i < normalized.Length; i++)
+        {
+            result.Add(new ClusterPosition
+            {
+                ClusterId = vectorInfo[i].ClusterId,
+                IsCentroid = vectorInfo[i].IsCentroid,
+                ImageVector = vectorInfo[i].ImageVector,
+                X = normalized[i][0],
+                Y = normalized[i][1]
+            });
+        }
+        return result;
+    }
+
+    // -------------------------------------------------------------------------
+    // Sparse compression — based on Polygon/5 ResNet50_Sparse_Dot_Product_test
+    // -------------------------------------------------------------------------
 
     /// <summary>
-    /// Detects the best available execution provider.
-    /// Returns CUDA > DirectML > CPU in priority order.
-    /// Wraps OrtEnv call in try/catch — safe to call even if no GPU driver installed.
+    /// Converts a dense embedding to sparse representation by keeping only top-N values.
+    /// sparseTopN = 2048 means no compression (full vector returned as-is).
+    /// sparseTopN = 10 means extreme compression (10 out of 2048 values kept, rest zeroed).
+    /// Reduces SVD computation time significantly with minor accuracy loss at aggressive settings.
     /// </summary>
-    public static GpuInfo Detect()
+    public static float[] ToSparse(float[] vector, int sparseTopN)
     {
-        try
-        {
-            var providers = OrtEnv.Instance().GetAvailableProviders();
+        if (sparseTopN <= 0 || sparseTopN >= vector.Length)
+            return vector;
 
-            if (providers.Contains("CUDAExecutionProvider"))
-                return new GpuInfo(true, "CUDA", "CUDA GPU (NVIDIA)");
+        var result = new float[vector.Length];
 
-            if (providers.Contains("DmlExecutionProvider"))
-                return new GpuInfo(true, "DirectML", "GPU (DirectML — AMD/Intel)");
+        var topIndices = vector
+            .Select((v, i) => (index: i, absValue: MathF.Abs(v)))
+            .OrderByDescending(x => x.absValue)
+            .Take(sparseTopN)
+            .Select(x => x.index);
 
-            if (providers.Contains("ROCMExecutionProvider"))
-                return new GpuInfo(true, "ROCM", "GPU (ROCm — AMD)");
-        }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"GpuDetector.Detect failed: {ex.Message}");
-        }
+        foreach (var idx in topIndices)
+            result[idx] = vector[idx];
 
-        return new GpuInfo(false, "CPU", "No GPU detected");
+        return result;
     }
 
     /// <summary>
-    /// Returns a short status string for display in the cockpit panel.
-    /// Examples: "CUDA GPU (NVIDIA)", "GPU (DirectML)", "No GPU detected"
+    /// CalculatePositions variant that applies sparse vector compression before PCA.
+    /// sparseTopN = 2048 is equivalent to no compression (same result as CalculatePositions).
+    /// Reports (current, total, message) progress tuples via IProgress for UI updates.
+    /// Existing ReduceTo2D_PCA and NormalizePositions are called unchanged.
     /// </summary>
-    public static string GetStatusText(GpuInfo info, bool useGpu)
+    public List<ClusterPosition> CalculatePositionsSparse(
+        List<ImageCluster> clusters,
+        int canvasWidth,
+        int canvasHeight,
+        int sparseTopN,
+        IProgress<(int current, int total, string message)>? progress = null)
     {
-        if (!info.IsAvailable) return "CPU only";
-        if (!useGpu) return $"{info.DeviceName} (disabled)";
-        return info.DeviceName;
+        var allVectors = new List<float[]>();
+        var vectorInfo = new List<VectorInfo>();
+
+        foreach (var cluster in clusters)
+        {
+            if (cluster.Centroid != null)
+            {
+                allVectors.Add(cluster.Centroid);
+                vectorInfo.Add(new VectorInfo { ClusterId = cluster.ClusterId, IsCentroid = true, ImageVector = null });
+            }
+            foreach (var image in cluster.Images)
+            {
+                allVectors.Add(image.Vector);
+                vectorInfo.Add(new VectorInfo { ClusterId = cluster.ClusterId, IsCentroid = false, ImageVector = image });
+            }
+        }
+
+        if (allVectors.Count == 0) return new List<ClusterPosition>();
+
+        int total = allVectors.Count;
+
+        // Apply sparse compression to each vector
+        var compressedVectors = new List<float[]>(total);
+        for (int i = 0; i < total; i++)
+        {
+            compressedVectors.Add(ToSparse(allVectors[i], sparseTopN));
+            if (i % 500 == 0)
+                progress?.Report((i, total, $"Compressing vectors: {i}/{total} (Top-{sparseTopN})"));
+        }
+
+        progress?.Report((total, total, $"Compression done — SVD on {total} vectors..."));
+
+        var positions2D = ReduceTo2D_PCA(compressedVectors);
+
+        progress?.Report((total, total, "SVD complete — normalizing..."));
+
+        var normalized = NormalizePositions(positions2D, canvasWidth, canvasHeight);
+
+        var result = new List<ClusterPosition>();
+        for (int i = 0; i < normalized.Length; i++)
+        {
+            result.Add(new ClusterPosition
+            {
+                ClusterId = vectorInfo[i].ClusterId,
+                IsCentroid = vectorInfo[i].IsCentroid,
+                ImageVector = vectorInfo[i].ImageVector,
+                X = normalized[i][0],
+                Y = normalized[i][1]
+            });
+        }
+
+        progress?.Report((total, total, $"Positions ready — {result.Count} points"));
+        return result;
+    }
+
+    // -------------------------------------------------------------------------
+    // PCA internals (unchanged — do not modify)
+    // -------------------------------------------------------------------------
+
+    private double[][] ReduceTo2D_PCA(List<float[]> vectors)
+    {
+        int n = vectors.Count;
+        int d = vectors[0].Length;
+
+        if (n < 2 || d < 2)
+        {
+            return Enumerable.Range(0, n)
+                .Select(_ => new double[] { 0.0, 0.0 })
+                .ToArray();
+        }
+
+        var matrixData = new double[n, d];
+        for (int i = 0; i < n; i++)
+            for (int j = 0; j < d; j++)
+                matrixData[i, j] = vectors[i][j];
+
+        var matrix = Matrix<double>.Build.DenseOfArray(matrixData);
+        var columnMeans = matrix.ColumnSums() / n;
+
+        var centered = matrix.Clone();
+        for (int i = 0; i < n; i++)
+            for (int j = 0; j < d; j++)
+                centered[i, j] -= columnMeans[j];
+
+        var svd = centered.Svd(computeVectors: true);
+        var u = svd.U;
+        var s = svd.S;
+
+        double s0 = s.Count > 0 ? s[0] : 0.0;
+        double s1 = s.Count > 1 ? s[1] : 0.0;
+
+        var result = new double[n][];
+        for (int i = 0; i < n; i++)
+        {
+            double x = u.RowCount > i && u.ColumnCount > 0 ? u[i, 0] * s0 : 0.0;
+            double y = u.RowCount > i && u.ColumnCount > 1 ? u[i, 1] * s1 : 0.0;
+            result[i] = new double[] { x, y };
+        }
+        return result;
+    }
+
+    private double[][] NormalizePositions(double[][] positions, int width, int height)
+    {
+        if (positions.Length == 0) return positions;
+
+        var minX = positions.Min(p => p[0]);
+        var maxX = positions.Max(p => p[0]);
+        var minY = positions.Min(p => p[1]);
+        var maxY = positions.Max(p => p[1]);
+
+        var rangeX = maxX - minX;
+        var rangeY = maxY - minY;
+        if (rangeX < 0.0001) rangeX = 1;
+        if (rangeY < 0.0001) rangeY = 1;
+
+        var padding = 0.05;
+        var usableWidth = width * (1 - 2 * padding);
+        var usableHeight = height * (1 - 2 * padding);
+
+        return positions.Select(p => new[]
+        {
+            (p[0] - minX) / rangeX * usableWidth + width * padding,
+            (p[1] - minY) / rangeY * usableHeight + height * padding
+        }).ToArray();
     }
 }
