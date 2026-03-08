@@ -80,6 +80,28 @@ public class LiteDbVectorStore : IVectorDatabase
             }
         });
     }
+
+    /// <summary>
+    /// Clears cached PCA coordinates (PcaX, PcaY) for all records.
+    /// Forces full SVD recompute on next load.
+    /// </summary>
+    public async Task ClearPcaCacheAsync()
+    {
+        await Task.Run(() =>
+        {
+            // Load all, clear PCA fields, update — LiteDB does not support bulk partial update
+            var all = _collection.FindAll().ToList();
+            foreach (var entity in all)
+            {
+                entity.PcaX = null;
+                entity.PcaY = null;
+            }
+            foreach (var entity in all)
+            {
+                _collection.Update(entity);
+            }
+        });
+    }
 }
 
 /// <summary>
@@ -88,13 +110,13 @@ public class LiteDbVectorStore : IVectorDatabase
 /// </summary>
 public class ImageVectorEntity
 {
-    public ObjectId Id { get; set; }
-    public string FilePath { get; set; }
-    public float[] Vector { get; set; }
-    public VectorType VectorType { get; set; }
-    public DateTime ProcessedAt { get; set; }
-    public long FileSize { get; set; }
-    public string? ThumbnailPath { get; set; }
-    public float? PcaX { get; set; }
-    public float? PcaY { get; set; }
+    public ObjectId   Id            { get; set; }
+    public string     FilePath      { get; set; }
+    public float[]    Vector        { get; set; }
+    public VectorType VectorType    { get; set; }
+    public DateTime   ProcessedAt   { get; set; }
+    public long       FileSize      { get; set; }
+    public string?    ThumbnailPath { get; set; }
+    public float?     PcaX          { get; set; }
+    public float?     PcaY          { get; set; }
 }
