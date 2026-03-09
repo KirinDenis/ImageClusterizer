@@ -16,8 +16,7 @@ namespace ImageClusterizer
     public class MapRenderCanvas : FrameworkElement
     {
         public static readonly DependencyProperty ItemsProperty =
-            DependencyProperty.Register(nameof(Items), typeof(IReadOnlyList<MapDot>),
-                typeof(MapRenderCanvas),
+            DependencyProperty.Register(nameof(Items), typeof(IReadOnlyList<MapDot>), typeof(MapRenderCanvas),
                 new FrameworkPropertyMetadata(null, OnItemsChanged));
 
         public IReadOnlyList<MapDot>? Items
@@ -37,11 +36,6 @@ namespace ImageClusterizer
         private Matrix _matrix = Matrix.Identity;
         private readonly List<(Rect bounds, MapDot dot)> _hitBoxes = new();
 
-        public MapDot? HoveredDot { get; private set; }
-        public event Action<MapDot, Point>? DotHovered;
-        public event Action? DotLeft;
-        public event Action<MapDot, bool>? DotClicked;
-
         public MapRenderCanvas()
         {
             _visuals = new VisualCollection(this);
@@ -56,8 +50,6 @@ namespace ImageClusterizer
         {
             _visuals.Clear();
             _hitBoxes.Clear();
-            HoveredDot = null;
-
             if (dots == null || dots.Count == 0) return;
 
             var borderPen = new Pen(new SolidColorBrush(Color.FromArgb(120, 100, 100, 100)), 0.8);
@@ -95,7 +87,6 @@ namespace ImageClusterizer
                     dc.Pop();
                     dc.DrawEllipse(null, borderPen, center, dot.Radius, dot.Radius);
                 }
-
                 visual.Transform = new TranslateTransform(dot.X - dot.Radius, dot.Y - dot.Radius);
                 _visuals.Add(visual);
                 _hitBoxes.Add((new Rect(dot.X - dot.Radius, dot.Y - dot.Radius, d, d), dot));
@@ -116,7 +107,6 @@ namespace ImageClusterizer
             var inv = _matrix;
             inv.Invert();
             var canvas = inv.Transform(screenPoint);
-
             for (int i = _hitBoxes.Count - 1; i >= 0; i--)
             {
                 var (_, dot) = _hitBoxes[i];
@@ -138,23 +128,18 @@ namespace ImageClusterizer
             var vis = _visuals[idx];
             var hb = _hitBoxes[idx];
             bool wasTop = idx == _visuals.Count - 1;
-
             _visuals.RemoveAt(idx);
             _hitBoxes.RemoveAt(idx);
-
-            if (wasTop) { _visuals.Insert(0, vis); _hitBoxes.Insert(0, hb); }
-            else { _visuals.Add(vis); _hitBoxes.Add(hb); }
+            if (wasTop)
+            {
+                _visuals.Insert(0, vis);
+                _hitBoxes.Insert(0, hb);
+            }
+            else
+            {
+                _visuals.Add(vis);
+                _hitBoxes.Add(hb);
+            }
         }
-    }
-
-    /// <summary>Lightweight dot data: position, radius, file info.</summary>
-    public class MapDot
-    {
-        public double X { get; init; }
-        public double Y { get; init; }
-        public double Radius { get; init; } = 14.0;
-        public string FilePath { get; init; } = "";
-        public string ThumbnailPath { get; init; } = "";
-        public long FileSize { get; init; }
     }
 }
