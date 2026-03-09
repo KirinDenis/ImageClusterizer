@@ -10,11 +10,28 @@ namespace ImageClusterizer
     /// <summary>
     /// High-performance scatter-plot canvas using DrawingVisual + VisualCollection.
     /// Handles 200k+ dots without WPF ObservableCollection/ItemsControl overhead.
-    /// Each dot is a pre-rendered DrawingVisual. Zoom/Pan via MatrixTransform.
-    /// Hit-testing is O(n) linear scan from top to bottom Z-order.
+    ///
+    /// Architecture:
+    ///   - VisualCollection child[0] = ContainerVisual with MatrixTransform (the "canvas space")
+    ///     - Inside the container: one DrawingVisual per dot
+    ///   - RenderTransform is NOT used on the element itself; only the container is transformed.
+    ///   - OnRender() draws the static background (unaffected by canvas zoom/pan).
+    ///   - Hit-testing transforms screen coords to canvas coords via inverse matrix.
     /// </summary>
     public class MapRenderCanvas : FrameworkElement
     {
+        // ---- Background DP ----
+        public static readonly DependencyProperty BackgroundProperty =
+            DependencyProperty.Register(nameof(Background), typeof(Brush), typeof(MapRenderCanvas),
+                new FrameworkPropertyMetadata(Brushes.Transparent,
+                    FrameworkPropertyMetadataOptions.AffectsRender));
+
+        public Brush Background
+        {
+            get => (Brush)GetValue(BackgroundProperty);
+            set => SetValue(BackgroundProperty, value);
+        }
+
         // ---- Items DP ----
         public static readonly DependencyProperty ItemsProperty =
             DependencyProperty.Register(nameof(Items), typeof(IReadOnlyList<MapDot>), typeof(MapRenderCanvas),
@@ -32,55 +49,35 @@ namespace ImageClusterizer
                 c.Render(e.NewValue as IReadOnlyList<MapDot>);
         }
 
-        // ---- Background DP (like Panel/Control) ----
-        public static readonly DependencyProperty BackgroundProperty =
-            DependencyProperty.Register(nameof(Background), typeof(Brush), typeof(MapRenderCanvas),
-                new FrameworkPropertyMetadata(Brushes.Transparent,
-                    FrameworkPropertyMetadataOptions.AffectsRender));
-
-        public Brush Background
-        {
-            get => (Brush)GetValue(BackgroundProperty);
-            set => SetValue(BackgroundProperty, value);
-        }
-
-        private readonly VisualCollection _visuals;
-        private readonly DrawingVisual _backgroundVisual = new DrawingVisual();
+        // ---- Internal state ----
+        private readonly VisualCollection _hostVisuals;   // holds _container
+        private readonly ContainerVisual _container;      // transformed canvas space
         private MatrixTransform _transform = new MatrixTransform();
         private Matrix _matrix = Matrix.Identity;
         private readonly List<(Rect bounds, MapDot dot)> _hitBoxes = new();
 
         public MapRenderCanvas()
         {
-            _visuals = new VisualCollection(this);
-            _visuals.Add(_backgroundVisual); // index 0 = background, always behind dots
-            RenderTransform = _transform;
+            _container = new ContainerVisual();
+            _container.Transform = _transform;
+            _hostVisuals = new VisualCollection(this) { _container };
             ClipToBounds = true;
         }
 
-        protected override int VisualChildrenCount => _visuals.Count;
-        protected override Visual GetVisualChild(int index) => _visuals[index];
+        // FrameworkElement needs these to expose visual children
+        protected override int VisualChildrenCount => _hostVisuals.Count;
+        protected override Visual GetVisualChild(int index) => _hostVisuals[index];
 
-        protected override void OnRenderSizeChanged(SizeChangedInfo sizeInfo)
+        // Background drawn in OnRender — not affected by _transform
+        protected override void OnRender(DrawingContext dc)
         {
-            base.OnRenderSizeChanged(sizeInfo);
-            DrawBackground();
-        }
-
-        private void DrawBackground()
-        {
-            using var dc = _backgroundVisual.RenderOpen();
-            // Draw background that is NOT affected by the canvas transform
-            // We use the inverse transform to always fill the viewport
             dc.DrawRectangle(Background ?? Brushes.Transparent, null,
                 new Rect(0, 0, ActualWidth, ActualHeight));
         }
 
         public void Render(IReadOnlyList<MapDot>? dots)
         {
-            // Remove all except background (index 0)
-            while (_visuals.Count > 1)
-                _visuals.RemoveAt(1);
+            _container.Children.Clear();
             _hitBoxes.Clear();
 
             if (dots == null || dots.Count == 0) return;
@@ -121,7 +118,7 @@ namespace ImageClusterizer
                     dc.DrawEllipse(null, borderPen, center, dot.Radius, dot.Radius);
                 }
                 visual.Transform = new TranslateTransform(dot.X - dot.Radius, dot.Y - dot.Radius);
-                _visuals.Add(visual);
+                _container.Children.Add(visual);
                 _hitBoxes.Add((new Rect(dot.X - dot.Radius, dot.Y - dot.Radius, d, d), dot));
             }
         }
@@ -130,11 +127,14 @@ namespace ImageClusterizer
         {
             _matrix = m;
             _transform.Matrix = m;
-            DrawBackground(); // redraw background so it always covers the viewport
         }
 
         public Matrix GetMatrix() => _matrix;
 
+        /// <summary>
+        /// Maps a screen-space point (from mouse) to canvas space and returns the
+        /// topmost dot hit, or null.
+        /// </summary>
         public MapDot? HitTest(Point screenPoint)
         {
             if (!_matrix.HasInverse) return null;
@@ -152,30 +152,31 @@ namespace ImageClusterizer
             return null;
         }
 
+        /// <summary>
+        /// Cycles the dot to bottom or top Z-order within the canvas container.
+        /// </summary>
         public void CycleZOrder(MapDot dot)
         {
-            // Find dot among visuals (offset by 1 for background)
             int idx = -1;
             for (int i = 0; i < _hitBoxes.Count; i++)
                 if (_hitBoxes[i].dot == dot) { idx = i; break; }
             if (idx < 0) return;
 
-            int visIdx = idx + 1; // +1 because index 0 is background
-            var vis = _visuals[visIdx];
+            var vis = (DrawingVisual)_container.Children[idx];
             var hb = _hitBoxes[idx];
-            bool wasTop = visIdx == _visuals.Count - 1;
+            bool wasTop = idx == _container.Children.Count - 1;
 
-            _visuals.RemoveAt(visIdx);
+            _container.Children.RemoveAt(idx);
             _hitBoxes.RemoveAt(idx);
 
             if (wasTop)
             {
-                _visuals.Insert(1, vis); // after background
+                _container.Children.Insert(0, vis);
                 _hitBoxes.Insert(0, hb);
             }
             else
             {
-                _visuals.Add(vis);
+                _container.Children.Add(vis);
                 _hitBoxes.Add(hb);
             }
         }
