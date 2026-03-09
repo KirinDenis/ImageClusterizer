@@ -13,7 +13,7 @@
 
   <DockPanel LastChildFill="True">
 
-    <!-- ══════════════════════ TOOLBAR ══════════════════════ -->
+    <!-- ============ TOOLBAR ============ -->
     <ToolBar DockPanel.Dock="Top" Height="48" Background="{DynamicResource ToolBarBackground}">
       <Button ToolTip="Scan images folder" Command="{Binding ViewModel.StartScanImagesCommand}" IsEnabled="{Binding ViewModel.IsNotScanning}">
         <StackPanel Orientation="Horizontal"><TextBlock Text="&#x1F4C2;" FontSize="16" Margin="0,0,6,0"/><TextBlock Text="Scan folder" VerticalAlignment="Center"/></StackPanel>
@@ -37,7 +37,7 @@
         <StackPanel Orientation="Horizontal"><TextBlock Text="&#x1F5D1;" FontSize="16" Margin="0,0,6,0"/><TextBlock Text="Clear data" VerticalAlignment="Center"/></StackPanel>
       </Button>
       <Separator/>
-      <Button ToolTip="Advanced settings &amp; telemetry" Command="{Binding ViewModel.ToggleCockpitCommand}">
+      <Button ToolTip="Advanced settings and telemetry" Command="{Binding ViewModel.ToggleCockpitCommand}">
         <StackPanel Orientation="Horizontal"><TextBlock Text="&#x2699;" FontSize="16" Margin="0,0,4,0"/><TextBlock Text="Advanced" VerticalAlignment="Center"/></StackPanel>
       </Button>
       <Separator/>
@@ -46,7 +46,7 @@
       </Button>
     </ToolBar>
 
-    <!-- ══════════════════════ STATUS BAR ══════════════════════ -->
+    <!-- ============ STATUS BAR ============ -->
     <DockPanel DockPanel.Dock="Bottom" Height="24" Background="{DynamicResource StatusBarBackground}">
       <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="8,0">
         <TextBlock Foreground="White" FontSize="11">
@@ -58,9 +58,9 @@
         </TextBlock>
       </StackPanel>
       <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,8,0">
-        <!-- GPU indicator -->
         <Ellipse Width="8" Height="8" VerticalAlignment="Center" Margin="0,0,4,0">
-          <Ellipse.Style><Style TargetType="Ellipse"><Setter Property="Fill" Value="{DynamicResource IndicatorInactive}"/>
+          <Ellipse.Style><Style TargetType="Ellipse">
+            <Setter Property="Fill" Value="{DynamicResource IndicatorInactive}"/>
             <Style.Triggers><DataTrigger Binding="{Binding ViewModel.GpuAvailable}" Value="True"><Setter Property="Fill" Value="{DynamicResource IndicatorActive}"/></DataTrigger></Style.Triggers>
           </Style></Ellipse.Style>
         </Ellipse>
@@ -69,7 +69,7 @@
       </StackPanel>
     </DockPanel>
 
-    <!-- ══════════════════════ CONSOLE ══════════════════════ -->
+    <!-- ============ CONSOLE ============ -->
     <Border DockPanel.Dock="Bottom" Background="{DynamicResource ConsoleBackground}"
             BorderThickness="0,1,0,0" BorderBrush="{DynamicResource AppBorder}" x:Name="ConsoleBorder">
       <Border.Style><Style TargetType="Border"><Setter Property="Height" Value="24"/>
@@ -96,7 +96,7 @@
       </DockPanel>
     </Border>
 
-    <!-- ══════════════════════ COCKPIT (Advanced) ══════════════════════ -->
+    <!-- ============ COCKPIT ============ -->
     <Border DockPanel.Dock="Top" Background="{DynamicResource CockpitBackground}"
             BorderThickness="0,0,0,1" BorderBrush="{DynamicResource AppBorder}">
       <Border.Style><Style TargetType="Border"><Setter Property="Height" Value="0"/><Setter Property="Visibility" Value="Collapsed"/>
@@ -114,51 +114,49 @@
         <!-- Col 0: Hardware -->
         <Border Grid.Column="0" Margin="4" Padding="8" BorderBrush="{DynamicResource CockpitGroupBorder}" BorderThickness="1" CornerRadius="4">
           <StackPanel>
-            <TextBlock Text="&#x1F4BB; Hardware" FontWeight="Bold" FontSize="11" Foreground="{DynamicResource AppText}" Margin="0,0,0,6"/>
+            <TextBlock Text="Hardware" FontWeight="Bold" FontSize="11" Foreground="{DynamicResource AppText}" Margin="0,0,0,6"/>
             <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
               <Ellipse Width="10" Height="10" VerticalAlignment="Center" Margin="0,0,6,0">
-                <Ellipse.Style><Style TargetType="Ellipse"><Setter Property="Fill" Value="{DynamicResource IndicatorInactive}"/>
+                <Ellipse.Style><Style TargetType="Ellipse">
+                  <Setter Property="Fill" Value="{DynamicResource IndicatorInactive}"/>
                   <Style.Triggers><DataTrigger Binding="{Binding ViewModel.GpuAvailable}" Value="True"><Setter Property="Fill" Value="{DynamicResource IndicatorActive}"/></DataTrigger></Style.Triggers>
                 </Style></Ellipse.Style>
               </Ellipse>
               <TextBlock Text="{Binding ViewModel.GpuName, Mode=OneWay}" FontSize="11" Foreground="{DynamicResource AppText}" VerticalAlignment="Center"/>
             </StackPanel>
             <CheckBox Content="Use GPU" IsChecked="{Binding ViewModel.UseGpu, Mode=TwoWay}" IsEnabled="{Binding ViewModel.GpuAvailable}" Foreground="{DynamicResource AppText}" FontSize="11"/>
-            <TextBlock FontSize="10" Foreground="{DynamicResource AppTextSecondary}" Margin="0,4,0,0"><Run Text="&#x1F4BE; DB: "/><Run Text="{Binding ViewModel.DatabaseSizeText, Mode=OneWay}"/></TextBlock>
+            <TextBlock FontSize="10" Foreground="{DynamicResource AppTextSecondary}" Margin="0,4,0,0"><Run Text="DB: "/><Run Text="{Binding ViewModel.DatabaseSizeText, Mode=OneWay}"/></TextBlock>
           </StackPanel>
         </Border>
 
-        <!-- Col 1: Compression -->
+        <!-- Col 1: Vector Compression -->
         <Border Grid.Column="1" Margin="4" Padding="8" BorderBrush="{DynamicResource CockpitGroupBorder}" BorderThickness="1" CornerRadius="4">
           <StackPanel>
-            <TextBlock Text="&#x1F4CA; Vector Compression" FontWeight="Bold" FontSize="11" Foreground="{DynamicResource AppText}" Margin="0,0,0,6"/>
+            <TextBlock Text="Vector Compression" FontWeight="Bold" FontSize="11" Foreground="{DynamicResource AppText}" Margin="0,0,0,6"/>
             <Slider Minimum="8" Maximum="2048" Value="{Binding ViewModel.SparseTopN, Mode=TwoWay}" SmallChange="1" LargeChange="256"/>
             <TextBlock FontSize="11" Foreground="{DynamicResource AppText}" Margin="0,4,0,0">
               <Run Text="Top-"/><Run Text="{Binding ViewModel.SparseTopN, Mode=OneWay}"/><Run Text=" / 2048"/>
             </TextBlock>
-            <TextBlock Text="&#x23F1; Last scan:" FontSize="10" Foreground="{DynamicResource AppTextSecondary}" Margin="0,4,0,0"/>
-            <TextBlock FontSize="10" Foreground="{DynamicResource AppTextSecondary}" Text="{Binding ViewModel.LastScanDuration, Mode=OneWay}"/>
+            <TextBlock FontSize="10" Foreground="{DynamicResource AppTextSecondary}" Margin="0,4,0,0"><Run Text="Last scan: "/><Run Text="{Binding ViewModel.LastScanDuration, Mode=OneWay}"/></TextBlock>
           </StackPanel>
         </Border>
 
         <!-- Col 2: Clustering -->
         <Border Grid.Column="2" Margin="4" Padding="8" BorderBrush="{DynamicResource CockpitGroupBorder}" BorderThickness="1" CornerRadius="4">
           <StackPanel>
-            <TextBlock Text="&#x1F517; Clustering" FontWeight="Bold" FontSize="11" Foreground="{DynamicResource AppText}" Margin="0,0,0,6"/>
+            <TextBlock Text="Clustering" FontWeight="Bold" FontSize="11" Foreground="{DynamicResource AppText}" Margin="0,0,0,6"/>
             <Slider Minimum="0.50" Maximum="0.99" SmallChange="0.01" Value="{Binding ViewModel.SimilarityThreshold, Mode=TwoWay}"/>
             <TextBlock FontSize="11" Foreground="{DynamicResource AppText}" Margin="0,4,0,0">
               <Run Text="Threshold: "/><Run Text="{Binding ViewModel.SimilarityThreshold, Mode=OneWay, StringFormat=F2}"/>
             </TextBlock>
-            <TextBlock FontSize="10" Foreground="{DynamicResource AppTextSecondary}" Margin="0,4,0,0">
-              <Run Text="{Binding ViewModel.ClusteringStatus, Mode=OneWay}"/>
-            </TextBlock>
+            <TextBlock FontSize="10" Foreground="{DynamicResource AppTextSecondary}" Margin="0,4,0,0" Text="{Binding ViewModel.ClusteringStatus, Mode=OneWay}"/>
           </StackPanel>
         </Border>
 
         <!-- Col 3: Analysis Profiles -->
         <Border Grid.Column="3" Margin="4" Padding="8" BorderBrush="{DynamicResource AppAccent}" BorderThickness="1" CornerRadius="4">
           <StackPanel>
-            <TextBlock Text="&#x1F4CB; Profiles" FontWeight="Bold" FontSize="11" Foreground="{DynamicResource AppAccent}" Margin="0,0,0,6"/>
+            <TextBlock Text="Profiles" FontWeight="Bold" FontSize="11" Foreground="{DynamicResource AppAccent}" Margin="0,0,0,6"/>
             <ComboBox FontSize="11" Margin="0,0,0,4"
                       ItemsSource="{Binding ViewModel.Profiles}"
                       SelectedItem="{Binding ViewModel.SelectedProfile, Mode=TwoWay}"
@@ -166,15 +164,13 @@
             <TextBox FontSize="11" Margin="0,0,0,4" Padding="3,2"
                      Text="{Binding ViewModel.NewProfileName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                      ToolTip="New profile name"/>
-            <StackPanel Orientation="Horizontal" Margin="0,0,0,2">
-              <Button Content="&#x2795; Create" FontSize="10" Padding="5,2" Margin="0,0,3,0"
-                      Command="{Binding ViewModel.CreateProfileCommand}"/>
-              <Button Content="&#x1F4BE; Save" FontSize="10" Padding="5,2" Margin="0,0,3,0"
-                      Command="{Binding ViewModel.SaveCurrentProfileCommand}"/>
-              <Button Content="&#x1F5D1;" FontSize="10" Padding="5,2"
+            <StackPanel Orientation="Horizontal">
+              <Button Content="+ Create" FontSize="10" Padding="5,2" Margin="0,0,3,0" Command="{Binding ViewModel.CreateProfileCommand}"/>
+              <Button Content="Save" FontSize="10" Padding="5,2" Margin="0,0,3,0" Command="{Binding ViewModel.SaveCurrentProfileCommand}"/>
+              <Button Content="Del" FontSize="10" Padding="5,2"
                       Command="{Binding ViewModel.DeleteProfileCommand}"
                       IsEnabled="{Binding ViewModel.CanDeleteProfile}"
-                      ToolTip="Delete selected profile"/>
+                      ToolTip="Delete selected profile (cannot delete Default)"/>
             </StackPanel>
           </StackPanel>
         </Border>
@@ -188,7 +184,7 @@
               <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
 
-            <!-- Stats column -->
+            <!-- Stats -->
             <StackPanel Grid.Column="0">
               <TextBlock Text="LIVE TELEMETRY" FontWeight="Bold" FontSize="12" Foreground="{DynamicResource AppAccent}" Margin="0,0,0,6"/>
               <TextBlock FontSize="14" FontWeight="Bold" Foreground="{DynamicResource AppText}">
@@ -198,70 +194,90 @@
                 <Run Text="&#x1F5C2; "/><Run Text="{Binding ViewModel.ClusterCount, Mode=OneWay}"/><Run Text=" clusters"/>
               </TextBlock>
               <TextBlock FontSize="11" Foreground="{DynamicResource AppTextSecondary}" Margin="0,2">
-                <Run Text="&#x1F4BE; "/><Run Text="{Binding ViewModel.DatabaseSizeText, Mode=OneWay}"/>
+                <Run Text="DB: "/><Run Text="{Binding ViewModel.DatabaseSizeText, Mode=OneWay}"/>
               </TextBlock>
             </StackPanel>
 
-            <!-- Phase indicators column -->
+            <!-- Phase Indicators (using DataTrigger on bool, no string-to-Color binding) -->
             <StackPanel Grid.Column="1" Margin="6,0,0,0">
               <TextBlock Text="PHASES" FontWeight="Bold" FontSize="12" Foreground="{DynamicResource AppAccent}" Margin="0,0,0,6"/>
-              <!-- Scan indicator -->
-              <StackPanel Orientation="Horizontal" Margin="0,0,0,3">
+
+              <!-- Scan -->
+              <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
                 <Ellipse Width="12" Height="12" VerticalAlignment="Center" Margin="0,0,5,0">
-                  <Ellipse.Fill><SolidColorBrush Color="{Binding ViewModel.ScanPhaseColor, Mode=OneWay}"/></Ellipse.Fill>
+                  <Ellipse.Style><Style TargetType="Ellipse">
+                    <Setter Property="Fill" Value="#555555"/>
+                    <Style.Triggers><DataTrigger Binding="{Binding ViewModel.IsScanPhaseActive}" Value="True"><Setter Property="Fill" Value="#00C853"/></DataTrigger></Style.Triggers>
+                  </Style></Ellipse.Style>
                 </Ellipse>
                 <TextBlock FontSize="11" VerticalAlignment="Center">
-                  <TextBlock.Foreground><SolidColorBrush Color="{Binding ViewModel.ScanPhaseColor, Mode=OneWay}"/></TextBlock.Foreground>
-                  <Run Text="&#x1F4C2; Scan"/>
+                  <TextBlock.Style><Style TargetType="TextBlock">
+                    <Setter Property="Foreground" Value="#555555"/>
+                    <Style.Triggers><DataTrigger Binding="{Binding ViewModel.IsScanPhaseActive}" Value="True"><Setter Property="Foreground" Value="#00C853"/></DataTrigger></Style.Triggers>
+                  </Style></TextBlock.Style>
+                  <Run Text="Scan"/>
                 </TextBlock>
               </StackPanel>
-              <!-- PCA indicator -->
-              <StackPanel Orientation="Horizontal" Margin="0,0,0,3">
+
+              <!-- PCA/RSVD -->
+              <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
                 <Ellipse Width="12" Height="12" VerticalAlignment="Center" Margin="0,0,5,0">
-                  <Ellipse.Fill><SolidColorBrush Color="{Binding ViewModel.PcaPhaseColor, Mode=OneWay}"/></Ellipse.Fill>
+                  <Ellipse.Style><Style TargetType="Ellipse">
+                    <Setter Property="Fill" Value="#555555"/>
+                    <Style.Triggers><DataTrigger Binding="{Binding ViewModel.IsPcaPhaseActive}" Value="True"><Setter Property="Fill" Value="#FF9100"/></DataTrigger></Style.Triggers>
+                  </Style></Ellipse.Style>
                 </Ellipse>
                 <TextBlock FontSize="11" VerticalAlignment="Center">
-                  <TextBlock.Foreground><SolidColorBrush Color="{Binding ViewModel.PcaPhaseColor, Mode=OneWay}"/></TextBlock.Foreground>
-                  <Run Text="&#x1F4CA; PCA/RSVD"/>
+                  <TextBlock.Style><Style TargetType="TextBlock">
+                    <Setter Property="Foreground" Value="#555555"/>
+                    <Style.Triggers><DataTrigger Binding="{Binding ViewModel.IsPcaPhaseActive}" Value="True"><Setter Property="Foreground" Value="#FF9100"/></DataTrigger></Style.Triggers>
+                  </Style></TextBlock.Style>
+                  <Run Text="PCA / RSVD"/>
                 </TextBlock>
               </StackPanel>
-              <!-- Render indicator -->
-              <StackPanel Orientation="Horizontal" Margin="0,0,0,3">
+
+              <!-- Render -->
+              <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
                 <Ellipse Width="12" Height="12" VerticalAlignment="Center" Margin="0,0,5,0">
-                  <Ellipse.Fill><SolidColorBrush Color="{Binding ViewModel.RenderPhaseColor, Mode=OneWay}"/></Ellipse.Fill>
+                  <Ellipse.Style><Style TargetType="Ellipse">
+                    <Setter Property="Fill" Value="#555555"/>
+                    <Style.Triggers><DataTrigger Binding="{Binding ViewModel.IsRenderPhaseActive}" Value="True"><Setter Property="Fill" Value="#40C4FF"/></DataTrigger></Style.Triggers>
+                  </Style></Ellipse.Style>
                 </Ellipse>
                 <TextBlock FontSize="11" VerticalAlignment="Center">
-                  <TextBlock.Foreground><SolidColorBrush Color="{Binding ViewModel.RenderPhaseColor, Mode=OneWay}"/></TextBlock.Foreground>
-                  <Run Text="&#x1F5FA; Render"/>
+                  <TextBlock.Style><Style TargetType="TextBlock">
+                    <Setter Property="Foreground" Value="#555555"/>
+                    <Style.Triggers><DataTrigger Binding="{Binding ViewModel.IsRenderPhaseActive}" Value="True"><Setter Property="Foreground" Value="#40C4FF"/></DataTrigger></Style.Triggers>
+                  </Style></TextBlock.Style>
+                  <Run Text="Render"/>
                 </TextBlock>
               </StackPanel>
-              <!-- Cluster indicator -->
+
+              <!-- Cluster -->
               <StackPanel Orientation="Horizontal">
                 <Ellipse Width="12" Height="12" VerticalAlignment="Center" Margin="0,0,5,0">
-                  <Ellipse.Fill><SolidColorBrush Color="{Binding ViewModel.ClusterPhaseColor, Mode=OneWay}"/></Ellipse.Fill>
+                  <Ellipse.Style><Style TargetType="Ellipse">
+                    <Setter Property="Fill" Value="#555555"/>
+                    <Style.Triggers><DataTrigger Binding="{Binding ViewModel.IsClusterPhaseActive}" Value="True"><Setter Property="Fill" Value="#E040FB"/></DataTrigger></Style.Triggers>
+                  </Style></Ellipse.Style>
                 </Ellipse>
                 <TextBlock FontSize="11" VerticalAlignment="Center">
-                  <TextBlock.Foreground><SolidColorBrush Color="{Binding ViewModel.ClusterPhaseColor, Mode=OneWay}"/></TextBlock.Foreground>
-                  <Run Text="&#x1F517; Cluster"/>
+                  <TextBlock.Style><Style TargetType="TextBlock">
+                    <Setter Property="Foreground" Value="#555555"/>
+                    <Style.Triggers><DataTrigger Binding="{Binding ViewModel.IsClusterPhaseActive}" Value="True"><Setter Property="Foreground" Value="#E040FB"/></DataTrigger></Style.Triggers>
+                  </Style></TextBlock.Style>
+                  <Run Text="Cluster"/>
                 </TextBlock>
               </StackPanel>
             </StackPanel>
 
-            <!-- Timing column -->
+            <!-- Timing -->
             <StackPanel Grid.Column="2" Margin="6,0,0,0">
               <TextBlock Text="PROCESSING" FontWeight="Bold" FontSize="12" Foreground="{DynamicResource AppAccent}" Margin="0,0,0,6"/>
-              <TextBlock FontSize="11" Foreground="{DynamicResource AppText}">
-                <Run Text="Phase: "/><Run Text="{Binding ViewModel.CurrentPhase, Mode=OneWay}"/>
-              </TextBlock>
-              <TextBlock FontSize="11" Foreground="{DynamicResource AppText}" Margin="0,3">
-                <Run Text="Elapsed: "/><Run Text="{Binding ViewModel.ElapsedText, Mode=OneWay}"/>
-              </TextBlock>
-              <TextBlock FontSize="11" Foreground="{DynamicResource AppText}" Margin="0,2">
-                <Run Text="ETA: "/><Run Text="{Binding ViewModel.EtaText, Mode=OneWay}"/>
-              </TextBlock>
-              <TextBlock FontSize="11" Foreground="{DynamicResource AppText}" Margin="0,2">
-                <Run Text="Speed: "/><Run Text="{Binding ViewModel.ItemsPerSecond, Mode=OneWay}"/><Run Text=" /s"/>
-              </TextBlock>
+              <TextBlock FontSize="11" Foreground="{DynamicResource AppText}"><Run Text="Phase: "/><Run Text="{Binding ViewModel.CurrentPhase, Mode=OneWay}"/></TextBlock>
+              <TextBlock FontSize="11" Foreground="{DynamicResource AppText}" Margin="0,3"><Run Text="Elapsed: "/><Run Text="{Binding ViewModel.ElapsedText, Mode=OneWay}"/></TextBlock>
+              <TextBlock FontSize="11" Foreground="{DynamicResource AppText}" Margin="0,2"><Run Text="ETA: "/><Run Text="{Binding ViewModel.EtaText, Mode=OneWay}"/></TextBlock>
+              <TextBlock FontSize="11" Foreground="{DynamicResource AppText}" Margin="0,2"><Run Text="Speed: "/><Run Text="{Binding ViewModel.ItemsPerSecond, Mode=OneWay}"/><Run Text=" /s"/></TextBlock>
               <ProgressBar Value="{Binding ViewModel.PcaProgress, Mode=OneWay}" Maximum="100"
                            Height="8" Margin="0,6,0,0" Foreground="{DynamicResource AppAccent}">
                 <ProgressBar.Style><Style TargetType="ProgressBar"><Setter Property="Visibility" Value="Collapsed"/>
@@ -274,7 +290,7 @@
       </Grid>
     </Border>
 
-    <!-- ══════════════════════ SCAN PROGRESS BAR ══════════════════════ -->
+    <!-- ============ SCAN PROGRESS ============ -->
     <Border DockPanel.Dock="Top" Visibility="{Binding ViewModel.ProgressVisibility, Mode=OneWay}"
             Background="{DynamicResource AppSurface}" BorderThickness="0,0,0,1" BorderBrush="{DynamicResource AppBorder}" Padding="12,6">
       <StackPanel>
@@ -287,13 +303,12 @@
       </StackPanel>
     </Border>
 
-    <!-- ══════════════════════ MAIN CONTENT TABS ══════════════════════ -->
+    <!-- ============ TABS ============ -->
     <TabControl Background="{DynamicResource AppBackground}">
 
-      <!-- ── MAP TAB ── -->
+      <!-- MAP TAB -->
       <TabItem Header="&#x1F5FA; Map">
         <Grid>
-          <!-- Map toolbar -->
           <DockPanel Height="36" VerticalAlignment="Top" Background="{DynamicResource AppSurface}" Panel.ZIndex="10" LastChildFill="False">
             <Border DockPanel.Dock="Bottom" Height="1" Background="{DynamicResource AppBorder}"/>
             <Button Content="&#x27F3; Recalculate PCA" Command="{Binding ViewModel.RecalculatePcaCommand}" Margin="8,4" Padding="8,3" DockPanel.Dock="Left"/>
@@ -303,23 +318,19 @@
             <TextBlock Text=" Wheel=Zoom  Drag=Pan  Click=Explorer  Shift+Click=Cycle Z"
                        VerticalAlignment="Center" FontSize="10" Foreground="{DynamicResource AppTextSecondary}"
                        DockPanel.Dock="Left" Margin="8,0"/>
-            <!-- PCA progress (right) -->
             <ProgressBar IsIndeterminate="True" Width="120" Height="14" Margin="0,0,4,0"
                          VerticalAlignment="Center" Foreground="{DynamicResource AppAccent}" DockPanel.Dock="Right">
               <ProgressBar.Style><Style TargetType="ProgressBar"><Setter Property="Visibility" Value="Collapsed"/>
                 <Style.Triggers><DataTrigger Binding="{Binding ViewModel.IsPcaComputing}" Value="True"><Setter Property="Visibility" Value="Visible"/></DataTrigger></Style.Triggers>
               </Style></ProgressBar.Style>
             </ProgressBar>
-            <TextBlock VerticalAlignment="Center" FontSize="11" Foreground="{DynamicResource AppTextSecondary}"
-                       DockPanel.Dock="Right" Margin="0,0,4,0">
+            <TextBlock VerticalAlignment="Center" FontSize="11" Foreground="{DynamicResource AppTextSecondary}" DockPanel.Dock="Right" Margin="0,0,4,0">
               <TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Visibility" Value="Collapsed"/>
                 <Style.Triggers><DataTrigger Binding="{Binding ViewModel.IsPcaComputing}" Value="True"><Setter Property="Visibility" Value="Visible"/></DataTrigger></Style.Triggers>
               </Style></TextBlock.Style>
               <Run Text="RSVD "/><Run Text="{Binding ViewModel.PcaProgress, Mode=OneWay}"/><Run Text="%"/>
             </TextBlock>
           </DockPanel>
-
-          <!-- Map canvas -->
           <local:MapRenderCanvas x:Name="MapCanvas" Margin="0,36,0,0"
               Background="{DynamicResource AppBackground}"
               Items="{Binding ViewModel.MapDots}"
@@ -329,8 +340,6 @@
               MouseMove="MapViewport_MouseMove"
               MouseRightButtonDown="MapViewport_MouseRightButtonDown"
               Cursor="Hand"/>
-
-          <!-- Hover panel -->
           <Border x:Name="HoverPanel" Visibility="Collapsed" Width="192"
                   VerticalAlignment="Top" HorizontalAlignment="Left"
                   Background="{DynamicResource AppSurface}" BorderBrush="{DynamicResource AppBorder}"
@@ -348,7 +357,7 @@
         </Grid>
       </TabItem>
 
-      <!-- ── CLUSTERS TAB ── -->
+      <!-- CLUSTERS TAB -->
       <TabItem>
         <TabItem.Header>
           <TextBlock><Run Text="&#x1F517; Clusters ("/><Run Text="{Binding ViewModel.ClusterCount, Mode=OneWay}"/><Run Text=")"/></TextBlock>
@@ -358,8 +367,7 @@
                   BorderThickness="0,0,0,1" BorderBrush="{DynamicResource AppBorder}" Padding="8,4">
             <StackPanel Orientation="Horizontal">
               <Button Content="&#x25B6; Compute clusters" Command="{Binding ViewModel.ComputeClustersCommand}" Margin="0,0,12,0" Padding="8,3"/>
-              <ProgressBar IsIndeterminate="True" Width="120" Height="16" Margin="0,0,8,0"
-                           VerticalAlignment="Center" Foreground="{DynamicResource AppAccent}">
+              <ProgressBar IsIndeterminate="True" Width="120" Height="16" Margin="0,0,8,0" VerticalAlignment="Center" Foreground="{DynamicResource AppAccent}">
                 <ProgressBar.Style><Style TargetType="ProgressBar"><Setter Property="Visibility" Value="Collapsed"/>
                   <Style.Triggers><DataTrigger Binding="{Binding ViewModel.IsClusterComputing}" Value="True"><Setter Property="Visibility" Value="Visible"/></DataTrigger></Style.Triggers>
                 </Style></ProgressBar.Style>
