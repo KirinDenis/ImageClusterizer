@@ -1,3 +1,4 @@
+using ImageClusterizer.Models;
 using ImageClusterizer.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
 using System;
@@ -105,7 +106,6 @@ namespace ImageClusterizer
 
             if (!_dragMoved)
             {
-                // Treat as click
                 var pos = e.GetPosition(MapCanvas);
                 var dot = MapCanvas.HitTest(pos);
                 if (dot != null)
@@ -135,7 +135,6 @@ namespace ImageClusterizer
                 return;
             }
 
-            // Hit test for hover panel
             var mousePos = e.GetPosition(MapCanvas);
             var hitDot = MapCanvas.HitTest(mousePos);
 
