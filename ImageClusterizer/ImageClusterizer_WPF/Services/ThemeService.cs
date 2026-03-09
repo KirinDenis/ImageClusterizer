@@ -1,6 +1,7 @@
 namespace ImageClusterizer.Services;
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
@@ -8,8 +9,6 @@ using System.Windows;
 
 /// <summary>
 /// Manages application theme (Light/Dark) with runtime switching and persistence.
-/// Swaps WPF ResourceDictionary at runtime so all DynamicResource bindings update instantly.
-/// Settings are persisted to AppSettings.json next to the executable.
 /// </summary>
 public class ThemeService
 {
@@ -20,84 +19,104 @@ public class ThemeService
 
     public Theme CurrentTheme { get; private set; } = Theme.Light;
 
-    /// <summary>Toggles between Light and Dark, saves preference</summary>
-    public void ToggleTheme()
-    {
-        ApplyTheme(CurrentTheme == Theme.Light ? Theme.Dark : Theme.Light);
-    }
+    public void ToggleTheme() => ApplyTheme(CurrentTheme == Theme.Light ? Theme.Dark : Theme.Light);
 
-    /// <summary>Applies the specified theme by swapping the theme ResourceDictionary</summary>
     public void ApplyTheme(Theme theme)
     {
         CurrentTheme = theme;
-
         var merged = Application.Current.Resources.MergedDictionaries;
-
-        // Remove the currently active theme dictionary (if any)
-        var old = merged.FirstOrDefault(d =>
-            d.Source != null &&
-            (d.Source.ToString().Contains("LightTheme") ||
-             d.Source.ToString().Contains("DarkTheme")));
-
-        if (old != null)
-            merged.Remove(old);
-
-        // Add the new theme dictionary — all DynamicResource bindings update automatically
-        var uri = theme == Theme.Dark ? DarkThemeUri : LightThemeUri;
-        merged.Add(new ResourceDictionary { Source = new Uri(uri) });
-
+        var old = merged.FirstOrDefault(d => d.Source != null &&
+            (d.Source.ToString().Contains("LightTheme") || d.Source.ToString().Contains("DarkTheme")));
+        if (old != null) merged.Remove(old);
+        merged.Add(new ResourceDictionary { Source = new Uri(theme == Theme.Dark ? DarkThemeUri : LightThemeUri) });
         SavePreference();
     }
 
-    /// <summary>Saves current theme preference to AppSettings.json</summary>
     public void SavePreference()
     {
-        try
-        {
-            var settings = AppSettings.Load();
-            settings.Theme = CurrentTheme.ToString();
-            AppSettings.Save(settings);
-        }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"ThemeService.SavePreference failed: {ex.Message}");
-        }
+        try { var s = AppSettings.Load(); s.Theme = CurrentTheme.ToString(); AppSettings.Save(s); }
+        catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"ThemeService.SavePreference: {ex.Message}"); }
     }
 
-    /// <summary>Loads and applies saved theme preference from AppSettings.json</summary>
     public void LoadPreference()
     {
-        try
-        {
-            var settings = AppSettings.Load();
-            var theme = Enum.TryParse<Theme>(settings.Theme, out var t) ? t : Theme.Light;
-            ApplyTheme(theme);
-        }
-        catch
-        {
-            ApplyTheme(Theme.Light);
-        }
+        try { var s = AppSettings.Load(); ApplyTheme(Enum.TryParse<Theme>(s.Theme, out var t) ? t : Theme.Light); }
+        catch { ApplyTheme(Theme.Light); }
     }
 }
 
+// ============================================================================
+// Analysis Profile
+// ============================================================================
+/// <summary>
+/// Named preset of analysis parameters. Users create profiles to quickly switch
+/// between different analysis configurations.
+/// </summary>
+public class AnalysisProfile
+{
+    public string Name { get; set; } = "Default";
+    public int SparseTopN { get; set; } = 2048;
+    public double SimilarityThreshold { get; set; } = 0.85;
+    public string VectorType { get; set; } = "Embedding";
+    public bool UseGpu { get; set; } = true;
+}
+
+// ============================================================================
+// AppSettings
+// ============================================================================
 /// <summary>
 /// Application settings model — persisted to AppSettings.json next to the executable.
-/// All settings are optional with sensible defaults.
 /// </summary>
 public class AppSettings
 {
     private static readonly string SettingsPath =
         Path.Combine(AppContext.BaseDirectory, "AppSettings.json");
+    private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true };
 
-    private static readonly JsonSerializerOptions JsonOptions =
-        new() { WriteIndented = true };
+    public string Theme { get; set; } = "Light";
+    public int SparseTopN { get; set; } = 2048;
+    public bool UseGpu { get; set; } = true;
+    public int ThreadCount { get; set; } = 0;
+    public double SimilarityThreshold { get; set; } = 0.85;
+    public bool IsConsoleExpanded { get; set; } = true;
+    public List<AnalysisProfile> Profiles { get; set; } = GetDefaultProfiles();
+    public string LastUsedProfile { get; set; } = "Default";
 
-    public string Theme              { get; set; } = "Light";
-    public int    SparseTopN         { get; set; } = 2048;
-    public bool   UseGpu             { get; set; } = true;
-    public int    ThreadCount        { get; set; } = 0;   // 0 = auto (ProcessorCount)
-    public double SimilarityThreshold{ get; set; } = 0.85;
-    public bool   IsConsoleExpanded  { get; set; } = true;
+    private static List<AnalysisProfile> GetDefaultProfiles() => new()
+    {
+        new AnalysisProfile
+        {
+            Name = "Default",
+            SparseTopN = 2048,
+            SimilarityThreshold = 0.85,
+            VectorType = "Embedding",
+            UseGpu = true
+        },
+        new AnalysisProfile
+        {
+            Name = "Fast (compressed)",
+            SparseTopN = 256,
+            SimilarityThreshold = 0.80,
+            VectorType = "Embedding",
+            UseGpu = true
+        },
+        new AnalysisProfile
+        {
+            Name = "Strict (deduplication)",
+            SparseTopN = 2048,
+            SimilarityThreshold = 0.97,
+            VectorType = "Embedding",
+            UseGpu = true
+        },
+        new AnalysisProfile
+        {
+            Name = "Logit classes",
+            SparseTopN = 1000,
+            SimilarityThreshold = 0.75,
+            VectorType = "Logit",
+            UseGpu = true
+        }
+    };
 
     public static AppSettings Load()
     {
@@ -106,23 +125,23 @@ public class AppSettings
             if (File.Exists(SettingsPath))
             {
                 var json = File.ReadAllText(SettingsPath);
-                return JsonSerializer.Deserialize<AppSettings>(json) ?? new AppSettings();
+                var s = JsonSerializer.Deserialize<AppSettings>(json);
+                if (s != null)
+                {
+                    // Ensure default profiles exist if not persisted
+                    if (s.Profiles == null || s.Profiles.Count == 0)
+                        s.Profiles = GetDefaultProfiles();
+                    return s;
+                }
             }
         }
-        catch { /* return defaults on any error */ }
+        catch { }
         return new AppSettings();
     }
 
     public static void Save(AppSettings settings)
     {
-        try
-        {
-            var json = JsonSerializer.Serialize(settings, JsonOptions);
-            File.WriteAllText(SettingsPath, json);
-        }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"AppSettings.Save failed: {ex.Message}");
-        }
+        try { File.WriteAllText(SettingsPath, JsonSerializer.Serialize(settings, JsonOptions)); }
+        catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"AppSettings.Save: {ex.Message}"); }
     }
 }
