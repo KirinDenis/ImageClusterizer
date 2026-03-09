@@ -1,4 +1,5 @@
 namespace ImageClusterizer.ViewModels;
+
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using ImageClusterizer.Models;
@@ -7,6 +8,7 @@ using ImageClusterizer.Utlility;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -32,15 +34,20 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty][NotifyPropertyChangedFor(nameof(IsNotScanning), nameof(ProgressVisibility))] private bool isScanning;
     public bool IsNotScanning => !IsScanning;
     public Visibility ProgressVisibility => IsScanning ? Visibility.Visible : Visibility.Collapsed;
+
     [ObservableProperty] private VectorType selectedVectorType = VectorType.Embedding;
     public IReadOnlyList<VectorType> AvailableVectorTypes { get; } = Enum.GetValues<VectorType>().ToList();
-    [ObservableProperty] private ObservableCollection<ClusterVisualItem> clusterItems = new();
-    [ObservableProperty] private ObservableCollection<ImageVisualItem> imageItems = new();
+
+    // High-performance map dots - replaced as whole reference, no ObservableCollection
+    [ObservableProperty] private IReadOnlyList<MapDot> mapDots = Array.Empty<MapDot>();
+
     [ObservableProperty] private double canvasWidth = 1000;
     [ObservableProperty] private double canvasHeight = 1000;
+
     [ObservableProperty][NotifyCanExecuteChangedFor(nameof(RecalculatePcaCommand))] private bool isPcaComputing;
     [ObservableProperty] private int pcaProgress;
     [ObservableProperty][NotifyCanExecuteChangedFor(nameof(ComputeClustersCommand))] private bool isClusterComputing;
+
     [ObservableProperty] private float similarityThreshold = 0.85f;
     [ObservableProperty] private int sparseTopN = 2048;
     [ObservableProperty] private bool useGpu = true;
@@ -51,17 +58,33 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty] private int clusterCount;
     [ObservableProperty] private string databaseSizeText = "0 KB";
     [ObservableProperty] private string lastScanDuration = "-";
+
+    // Live telemetry
+    [ObservableProperty] private string zoomText = "100%";
+    [ObservableProperty] private string currentPhase = "Idle";
+    [ObservableProperty] private string elapsedText = "-";
+    [ObservableProperty] private string etaText = "-";
+
     [ObservableProperty] private ObservableCollection<string> consoleLines = new();
     [ObservableProperty] private bool isConsoleExpanded = true;
     [ObservableProperty] private bool isCockpitExpanded = false;
     [ObservableProperty] private string themeIcon = "Light";
 
+    // Elapsed timer
+    private readonly System.Timers.Timer _elapsedTimer = new(2000);
+    private Stopwatch? _phaseStopwatch;
+    private int _etaTotal;
+    private int _etaCurrent;
+
     private CancellationTokenSource? cts;
 
     public MainViewModel(
-        ImageScanner imageScanner, IVectorDatabase vectorDatabase,
-        ClusteringService clusteringService, StorageService storageService,
-        ThemeService themeService, LogService logService)
+        ImageScanner imageScanner,
+        IVectorDatabase vectorDatabase,
+        ClusteringService clusteringService,
+        StorageService storageService,
+        ThemeService themeService,
+        LogService logService)
     {
         this.imageScanner = imageScanner;
         this.vectorDatabase = vectorDatabase;
@@ -70,13 +93,14 @@ public partial class MainViewModel : ObservableObject
         this.themeService = themeService;
         this.logService = logService;
 
-        logService.LogAdded += line =>
-            Application.Current?.Dispatcher.InvokeAsync(() =>
-            {
-                ConsoleLines.Add(line);
-                while (ConsoleLines.Count > LogService.MaxLines)
-                    ConsoleLines.RemoveAt(0);
-            });
+        logService.LogAdded += line => Application.Current?.Dispatcher.InvokeAsync(() =>
+        {
+            ConsoleLines.Add(line);
+            while (ConsoleLines.Count > LogService.MaxLines) ConsoleLines.RemoveAt(0);
+        });
+
+        _elapsedTimer.Elapsed += OnElapsedTick;
+        _elapsedTimer.AutoReset = true;
 
         Task.Run(() =>
         {
@@ -100,11 +124,89 @@ public partial class MainViewModel : ObservableObject
         UpdateDatabaseSize();
     }
 
-    [RelayCommand] private void ToggleTheme() { themeService.ToggleTheme(); UpdateThemeIcon(); logService.Log($"Theme: {themeService.CurrentTheme}"); }
-    private void UpdateThemeIcon() => ThemeIcon = themeService.CurrentTheme == ThemeService.Theme.Dark ? "Dark" : "Light";
+    private void OnElapsedTick(object? sender, System.Timers.ElapsedEventArgs e)
+    {
+        if (_phaseStopwatch == null) return;
+        var el = _phaseStopwatch.Elapsed;
+        string elapsed = el.TotalMinutes >= 1
+            ? $"{(int)el.TotalMinutes}m {el.Seconds:D2}s"
+            : $"{el.TotalSeconds:F1}s";
+
+        string eta = "-";
+        if (_etaTotal > 0 && _etaCurrent > 0 && _etaCurrent < _etaTotal)
+        {
+            double rate = _etaCurrent / el.TotalSeconds;
+            if (rate > 0)
+            {
+                double remaining = (_etaTotal - _etaCurrent) / rate;
+                eta = remaining >= 60
+                    ? $"~{(int)(remaining / 60)}m {(int)(remaining % 60):D2}s"
+                    : $"~{remaining:F0}s";
+            }
+        }
+
+        Application.Current?.Dispatcher.InvokeAsync(() =>
+        {
+            ElapsedText = elapsed;
+            EtaText = eta;
+        });
+    }
+
+    private void StartPhase(string name, int total = 0)
+    {
+        _etaTotal = total;
+        _etaCurrent = 0;
+        _phaseStopwatch = Stopwatch.StartNew();
+        _elapsedTimer.Start();
+        Application.Current?.Dispatcher.InvokeAsync(() =>
+        {
+            CurrentPhase = name;
+            ElapsedText = "0s";
+            EtaText = "-";
+        });
+    }
+
+    private void UpdatePhaseProgress(int current)
+    {
+        _etaCurrent = current;
+    }
+
+    private void StopPhase()
+    {
+        _elapsedTimer.Stop();
+        var el = _phaseStopwatch?.Elapsed ?? TimeSpan.Zero;
+        _phaseStopwatch = null;
+        string elapsed = el.TotalMinutes >= 1
+            ? $"{(int)el.TotalMinutes}m {el.Seconds:D2}s"
+            : $"{el.TotalSeconds:F1}s";
+        Application.Current?.Dispatcher.InvokeAsync(() =>
+        {
+            CurrentPhase = "Idle";
+            ElapsedText = elapsed;
+            EtaText = "Done";
+        });
+    }
+
+    [RelayCommand]
+    private void ToggleTheme()
+    {
+        themeService.ToggleTheme();
+        UpdateThemeIcon();
+        logService.Log($"Theme: {themeService.CurrentTheme}");
+    }
+
+    private void UpdateThemeIcon() =>
+        ThemeIcon = themeService.CurrentTheme == ThemeService.Theme.Dark ? "Dark" : "Light";
+
     [RelayCommand] private void ToggleConsole() => IsConsoleExpanded = !IsConsoleExpanded;
     [RelayCommand] private void ClearConsole() { ConsoleLines.Clear(); logService.Clear(); }
-    [RelayCommand] private void ToggleCockpit() { IsCockpitExpanded = !IsCockpitExpanded; logService.Log($"Cockpit: {(IsCockpitExpanded ? "expanded" : "collapsed")}"); }
+
+    [RelayCommand]
+    private void ToggleCockpit()
+    {
+        IsCockpitExpanded = !IsCockpitExpanded;
+        logService.Log($"Cockpit: {(IsCockpitExpanded ? "expanded" : "collapsed")}");
+    }
 
     partial void OnSparseTopNChanged(int value) { logService.Log($"Compression: Top-{value}/2048"); SaveSettings(); }
     partial void OnSimilarityThresholdChanged(float value) { logService.Log($"Threshold: {value:F2}"); SaveSettings(); }
@@ -114,8 +216,11 @@ public partial class MainViewModel : ObservableObject
     private void SaveSettings()
     {
         var s = AppSettings.Load();
-        s.SparseTopN = SparseTopN; s.UseGpu = UseGpu; s.ThreadCount = ThreadCount;
-        s.SimilarityThreshold = SimilarityThreshold; s.IsConsoleExpanded = IsConsoleExpanded;
+        s.SparseTopN = SparseTopN;
+        s.UseGpu = UseGpu;
+        s.ThreadCount = ThreadCount;
+        s.SimilarityThreshold = SimilarityThreshold;
+        s.IsConsoleExpanded = IsConsoleExpanded;
         AppSettings.Save(s);
     }
 
@@ -124,9 +229,11 @@ public partial class MainViewModel : ObservableObject
     {
         string? folder = Utility.SelectFolderDiagoAsync();
         if (string.IsNullOrWhiteSpace(folder)) return;
+
         IsScanning = true;
         cts = new CancellationTokenSource();
-        var sw = System.Diagnostics.Stopwatch.StartNew();
+        StartPhase("Scanning", 0);
+        var sw = Stopwatch.StartNew();
         try
         {
             Clusters.Clear();
@@ -137,6 +244,7 @@ public partial class MainViewModel : ObservableObject
                 ProcessedCount = prog.ProcessedCount;
                 TotalCount = prog.TotalCount;
                 Progress = (double)ProcessedCount / TotalCount * 100;
+                UpdatePhaseProgress(prog.ProcessedCount);
                 if (ProcessedCount % 50 == 0)
                     logService.Log($"Vectorizing: {ProcessedCount}/{TotalCount}");
             }
@@ -145,25 +253,53 @@ public partial class MainViewModel : ObservableObject
             logService.Log($"Scan complete - {ProcessedCount} vectors in {LastScanDuration}");
             await LoadAndDisplayAsync();
         }
-        finally { IsScanning = false; cts?.Cancel(); cts?.Dispose(); UpdateDatabaseSize(); }
+        finally
+        {
+            IsScanning = false;
+            StopPhase();
+            cts?.Cancel();
+            cts?.Dispose();
+            UpdateDatabaseSize();
+        }
     }
 
-    [RelayCommand] private async Task LoadExistingClustersAsync() { logService.Log("Loading DB..."); await LoadAndDisplayAsync(); }
-    [RelayCommand] private void CancelScan() { cts?.Cancel(); logService.Log("Scan cancelled."); }
+    [RelayCommand]
+    private async Task LoadExistingClustersAsync()
+    {
+        logService.Log("Loading DB...");
+        await LoadAndDisplayAsync();
+    }
+
+    [RelayCommand]
+    private void CancelScan()
+    {
+        cts?.Cancel();
+        logService.Log("Scan cancelled.");
+    }
 
     [RelayCommand]
     private async Task ClearAllDataAsync()
     {
         var r = MessageBox.Show(
             "This will permanently delete all stored vectors, thumbnails, and cached positions.\n\nYour original image files will NOT be affected.\n\nContinue?",
-            "Clear all data", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+            "Clear all data",
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Warning);
         if (r != MessageBoxResult.Yes) return;
+
         logService.Log("Closing DB...");
         await vectorDatabase.CloseAsync();
         await storageService.ClearAllDataAsync();
         await vectorDatabase.ReopenAsync(storageService.DatabasePath);
-        Clusters.Clear(); ClusterItems.Clear(); ImageItems.Clear();
-        CurrentFile = ""; ProcessedCount = 0; TotalCount = 0; Progress = 0; VectorCount = 0; ClusterCount = 0;
+
+        Clusters.Clear();
+        MapDots = Array.Empty<MapDot>();
+        CurrentFile = "";
+        ProcessedCount = 0;
+        TotalCount = 0;
+        Progress = 0;
+        VectorCount = 0;
+        ClusterCount = 0;
         UpdateDatabaseSize();
         logService.Log("All data cleared. DB reconnected.");
     }
@@ -177,6 +313,7 @@ public partial class MainViewModel : ObservableObject
         if (vectors.Count == 0) { logService.Log("No vectors."); return; }
         await ComputeAndCachePcaAsync(vectors);
     }
+
     private bool CanRecalculatePca() => !IsPcaComputing && !IsScanning;
 
     [RelayCommand(CanExecute = nameof(CanComputeClusters))]
@@ -196,30 +333,42 @@ public partial class MainViewModel : ObservableObject
             });
             logService.Log($"Done - {ClusterCount} clusters.");
         }
-        finally { IsClusterComputing = false; }
+        finally
+        {
+            IsClusterComputing = false;
+        }
     }
+
     private bool CanComputeClusters() => !IsClusterComputing && !IsScanning && !IsPcaComputing;
 
     // =========================================================================
     // CORE DISPLAY
     // =========================================================================
-
     private async Task LoadAndDisplayAsync()
     {
         var vectors = await vectorDatabase.GetAllAsync();
         VectorCount = vectors.Count;
-        if (vectors.Count == 0) { logService.Log("Empty - scan a folder first."); return; }
+        if (vectors.Count == 0)
+        {
+            logService.Log("Empty - scan a folder first.");
+            return;
+        }
         logService.Log($"Loaded {vectors.Count} vectors.");
+
         bool cacheOk = vectors.All(v => v.PcaX.HasValue && v.PcaY.HasValue);
-        if (cacheOk) { logService.Log("PCA cache hit - fast render."); await PopulateFromCacheAsync(vectors); }
-        else { logService.Log($"PCA cache incomplete - RSVD required."); await ComputeAndCachePcaAsync(vectors); }
+        if (cacheOk)
+        {
+            logService.Log("PCA cache hit - fast render.");
+            await PopulateFromCacheAsync(vectors);
+        }
+        else
+        {
+            logService.Log($"PCA cache incomplete ({vectors.Count(v => !v.PcaX.HasValue)} missing) - RSVD required.");
+            await ComputeAndCachePcaAsync(vectors);
+        }
         UpdateDatabaseSize();
     }
 
-    /// <summary>
-    /// Dot radius based on log-scale file size relative to dataset median.
-    /// Median maps to radius 14; range is 6..22 (1.5x smaller/larger).
-    /// </summary>
     private static double[] ComputeDotRadii(IReadOnlyList<long> fileSizes)
     {
         if (fileSizes.Count == 0) return Array.Empty<double>();
@@ -236,6 +385,8 @@ public partial class MainViewModel : ObservableObject
 
     private async Task PopulateFromCacheAsync(List<ImageVector> vectors)
     {
+        StartPhase("Rendering (cache)", vectors.Count);
+
         var minX = vectors.Min(v => v.PcaX!.Value);
         var maxX = vectors.Max(v => v.PcaX!.Value);
         var minY = vectors.Min(v => v.PcaY!.Value);
@@ -249,32 +400,28 @@ public partial class MainViewModel : ObservableObject
         var fileSizes = vectors.Select(v => v.FileSize).ToList();
         var radii = ComputeDotRadii(fileSizes);
 
-        // Build items fully on background thread - no UI work until done
-        var items = await Task.Run(() =>
+        var dots = await Task.Run(() =>
         {
-            var list = new List<ImageVisualItem>(vectors.Count);
+            var list = new List<MapDot>(vectors.Count);
             for (int i = 0; i < vectors.Count; i++)
             {
                 var v = vectors[i];
-                list.Add(new ImageVisualItem
+                list.Add(new MapDot
                 {
                     FilePath = v.FilePath,
                     ThumbnailPath = v.ThumbnailPath ?? v.FilePath,
                     FileSize = v.FileSize,
-                    DotRadius = radii[i],
+                    Radius = radii[i],
                     X = (v.PcaX!.Value - minX) / rX * wW + CanvasWidth * pad,
                     Y = (v.PcaY!.Value - minY) / rY * wH + CanvasHeight * pad
                 });
             }
-            return list;
+            return (IReadOnlyList<MapDot>)list.AsReadOnly();
         });
 
-        await Application.Current.Dispatcher.InvokeAsync(() =>
-        {
-            ImageItems.Clear(); ClusterItems.Clear();
-            foreach (var item in items) ImageItems.Add(item);
-        });
-        logService.Log($"Map rendered - {ImageItems.Count} images.");
+        MapDots = dots;
+        StopPhase();
+        logService.Log($"Map rendered - {dots.Count} images from cache.");
     }
 
     private async Task ComputeAndCachePcaAsync(List<ImageVector> vectors)
@@ -283,58 +430,59 @@ public partial class MainViewModel : ObservableObject
         PcaProgress = 0;
         int dim = vectors.Count > 0 ? vectors[0].Vector.Length : 0;
         logService.Log($"RSVD on {vectors.Count} x {dim} (Top-{SparseTopN})...");
+        StartPhase("RSVD / PCA", vectors.Count);
 
         var prog = new Progress<(int current, int total, string message)>(p =>
         {
             PcaProgress = p.total > 0 ? p.current * 100 / p.total : 0;
+            UpdatePhaseProgress(p.current);
             if (!string.IsNullOrEmpty(p.message)) logService.Log(p.message);
         });
 
         List<ClusterPosition> positions;
         try
         {
-            // Fully background - UI stays interactive during all RSVD steps
             positions = await Task.Run(() => clusteringService.CalculatePositionsSparse(
                 new List<ImageCluster> { new ImageCluster { Images = vectors, ClusterId = 0 } },
-                (int)CanvasWidth, (int)CanvasHeight, SparseTopN, prog));
+                (int)CanvasWidth,
+                (int)CanvasHeight,
+                SparseTopN,
+                prog));
         }
-        finally { IsPcaComputing = false; }
+        finally
+        {
+            IsPcaComputing = false;
+        }
 
         var nonCentroids = positions.Where(p => !p.IsCentroid && p.ImageVector != null).ToList();
         var radii = ComputeDotRadii(nonCentroids.Select(p => p.ImageVector.FileSize).ToList());
+        logService.Log($"RSVD done - building {nonCentroids.Count} dots...");
 
-        logService.Log($"RSVD done - rendering {nonCentroids.Count} dots...");
+        StartPhase("Rendering", nonCentroids.Count);
 
-        // Build visual items off-thread
-        var items = await Task.Run(() =>
+        var dots = await Task.Run(() =>
         {
-            var list = new List<ImageVisualItem>(nonCentroids.Count);
+            var list = new List<MapDot>(nonCentroids.Count);
             for (int i = 0; i < nonCentroids.Count; i++)
             {
                 var pos = nonCentroids[i];
-                list.Add(new ImageVisualItem
+                list.Add(new MapDot
                 {
-                    ClusterId = pos.ClusterId,
                     FilePath = pos.ImageVector.FilePath,
                     ThumbnailPath = pos.ImageVector.ThumbnailPath ?? pos.ImageVector.FilePath,
                     FileSize = pos.ImageVector.FileSize,
-                    DotRadius = radii.Length > i ? radii[i] : 14.0,
+                    Radius = radii.Length > i ? radii[i] : 14.0,
                     X = pos.X,
                     Y = pos.Y
                 });
             }
-            return list;
+            return (IReadOnlyList<MapDot>)list.AsReadOnly();
         });
 
-        // Single UI update
-        await Application.Current.Dispatcher.InvokeAsync(() =>
-        {
-            ImageItems.Clear(); ClusterItems.Clear();
-            foreach (var item in items) ImageItems.Add(item);
-        });
-        logService.Log($"Map rendered - {ImageItems.Count} images.");
+        MapDots = dots;
+        StopPhase();
+        logService.Log($"Map rendered - {dots.Count} images.");
 
-        // Save PCA coordinates in background without blocking UI
         _ = Task.Run(async () =>
         {
             var tasks = nonCentroids
