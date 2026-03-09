@@ -3,7 +3,7 @@ name: Build
 on:
   push:
     branches: [ "main" ]
-    tags: [ "v*" ]          # ← добавь чтобы Release срабатывал на теги
+    tags: [ "v1.0.0" ]          # ← добавь чтобы Release срабатывал на теги
   pull_request:
     branches: [ "main" ]
 
