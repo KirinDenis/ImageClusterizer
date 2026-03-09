@@ -158,7 +158,7 @@
           <StackPanel>
             <TextBlock Text="Profiles" FontWeight="Bold" FontSize="11" Foreground="{DynamicResource AppAccent}" Margin="0,0,0,6"/>
             <ComboBox FontSize="11" Margin="0,0,0,4"
-                      ItemsSource="{Binding ViewModel.Profiles}"
+                      ItemsSource="{Binding ViewModel.Profiles, Mode=OneWay}"
                       SelectedItem="{Binding ViewModel.SelectedProfile, Mode=TwoWay}"
                       DisplayMemberPath="Name"/>
             <TextBox FontSize="11" Margin="0,0,0,4" Padding="3,2"
@@ -169,7 +169,7 @@
               <Button Content="Save" FontSize="10" Padding="5,2" Margin="0,0,3,0" Command="{Binding ViewModel.SaveCurrentProfileCommand}"/>
               <Button Content="Del" FontSize="10" Padding="5,2"
                       Command="{Binding ViewModel.DeleteProfileCommand}"
-                      IsEnabled="{Binding ViewModel.CanDeleteProfile}"
+                      IsEnabled="{Binding ViewModel.CanDeleteProfile, Mode=OneWay}"
                       ToolTip="Delete selected profile (cannot delete Default)"/>
             </StackPanel>
           </StackPanel>
@@ -198,10 +198,9 @@
               </TextBlock>
             </StackPanel>
 
-            <!-- Phase Indicators (using DataTrigger on bool, no string-to-Color binding) -->
+            <!-- Phase Indicators -->
             <StackPanel Grid.Column="1" Margin="6,0,0,0">
               <TextBlock Text="PHASES" FontWeight="Bold" FontSize="12" Foreground="{DynamicResource AppAccent}" Margin="0,0,0,6"/>
-
               <!-- Scan -->
               <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
                 <Ellipse Width="12" Height="12" VerticalAlignment="Center" Margin="0,0,5,0">
@@ -218,8 +217,7 @@
                   <Run Text="Scan"/>
                 </TextBlock>
               </StackPanel>
-
-              <!-- PCA/RSVD -->
+              <!-- PCA -->
               <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
                 <Ellipse Width="12" Height="12" VerticalAlignment="Center" Margin="0,0,5,0">
                   <Ellipse.Style><Style TargetType="Ellipse">
@@ -235,7 +233,6 @@
                   <Run Text="PCA / RSVD"/>
                 </TextBlock>
               </StackPanel>
-
               <!-- Render -->
               <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
                 <Ellipse Width="12" Height="12" VerticalAlignment="Center" Margin="0,0,5,0">
@@ -252,7 +249,6 @@
                   <Run Text="Render"/>
                 </TextBlock>
               </StackPanel>
-
               <!-- Cluster -->
               <StackPanel Orientation="Horizontal">
                 <Ellipse Width="12" Height="12" VerticalAlignment="Center" Margin="0,0,5,0">
@@ -395,16 +391,17 @@
                           BorderThickness="1" CornerRadius="6" Padding="10" Width="280" Margin="6" VerticalAlignment="Top">
                     <StackPanel>
                       <TextBlock FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource AppText}" Margin="0,0,0,2">
-                        <Run Text="Cluster #"/><Run Text="{Binding ClusterId}"/>
+                        <Run Text="Cluster #"/><Run Text="{Binding ClusterId, Mode=OneWay}"/>
                       </TextBlock>
                       <TextBlock FontSize="11" Margin="0,0,0,6" Foreground="{DynamicResource AppTextSecondary}">
-                        <Run Text="{Binding Images.Count}"/><Run Text=" images"/>
+                        <Run Text="{Binding Images.Count, Mode=OneWay}"/><Run Text=" images"/>
                       </TextBlock>
-                      <ItemsControl ItemsSource="{Binding Images}" MaxHeight="180">
+                      <ItemsControl ItemsSource="{Binding Images, Mode=OneWay}" MaxHeight="180">
                         <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
                         <ItemsControl.ItemTemplate>
                           <DataTemplate DataType="{x:Type models:ImageVector}">
-                            <Image Source="{Binding ThumbnailPath}" Width="72" Height="72" Stretch="UniformToFill" Margin="2" ToolTip="{Binding FilePath}"/>
+                            <Image Source="{Binding ThumbnailPath, Mode=OneWay}" Width="72" Height="72"
+                                   Stretch="UniformToFill" Margin="2" ToolTip="{Binding FilePath, Mode=OneWay}"/>
                           </DataTemplate>
                         </ItemsControl.ItemTemplate>
                       </ItemsControl>
