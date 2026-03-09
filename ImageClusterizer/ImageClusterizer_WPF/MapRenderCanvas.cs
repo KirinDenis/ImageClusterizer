@@ -10,14 +10,31 @@ namespace ImageClusterizer
     /// <summary>
     /// High-performance scatter-plot canvas using DrawingVisual + VisualCollection.
     /// Handles 200k+ dots without WPF ObservableCollection/ItemsControl overhead.
-    /// Each dot is a pre-rendered DrawingVisual. Zoom/Pan via MatrixTransform.
-    /// Hit-testing is O(n) linear scan from top to bottom Z-order.
+    ///
+    /// Architecture:
+    ///   - VisualCollection child[0] = ContainerVisual with MatrixTransform (the "canvas space")
+    ///     - Inside the container: one DrawingVisual per dot
+    ///   - RenderTransform is NOT used on the element itself; only the container is transformed.
+    ///   - OnRender() draws the static background (unaffected by canvas zoom/pan).
+    ///   - Hit-testing transforms screen coords to canvas coords via inverse matrix.
     /// </summary>
     public class MapRenderCanvas : FrameworkElement
     {
+        // ---- Background DP ----
+        public static readonly DependencyProperty BackgroundProperty =
+            DependencyProperty.Register(nameof(Background), typeof(Brush), typeof(MapRenderCanvas),
+                new FrameworkPropertyMetadata(Brushes.Transparent,
+                    FrameworkPropertyMetadataOptions.AffectsRender));
+
+        public Brush Background
+        {
+            get => (Brush)GetValue(BackgroundProperty);
+            set => SetValue(BackgroundProperty, value);
+        }
+
+        // ---- Items DP ----
         public static readonly DependencyProperty ItemsProperty =
-            DependencyProperty.Register(nameof(Items), typeof(IReadOnlyList<MapDot>),
-                typeof(MapRenderCanvas),
+            DependencyProperty.Register(nameof(Items), typeof(IReadOnlyList<MapDot>), typeof(MapRenderCanvas),
                 new FrameworkPropertyMetadata(null, OnItemsChanged));
 
         public IReadOnlyList<MapDot>? Items
@@ -32,31 +49,36 @@ namespace ImageClusterizer
                 c.Render(e.NewValue as IReadOnlyList<MapDot>);
         }
 
-        private readonly VisualCollection _visuals;
+        // ---- Internal state ----
+        private readonly VisualCollection _hostVisuals;   // holds _container
+        private readonly ContainerVisual _container;      // transformed canvas space
         private MatrixTransform _transform = new MatrixTransform();
         private Matrix _matrix = Matrix.Identity;
         private readonly List<(Rect bounds, MapDot dot)> _hitBoxes = new();
 
-        public MapDot? HoveredDot { get; private set; }
-        public event Action<MapDot, Point>? DotHovered;
-        public event Action? DotLeft;
-        public event Action<MapDot, bool>? DotClicked;
-
         public MapRenderCanvas()
         {
-            _visuals = new VisualCollection(this);
-            RenderTransform = _transform;
+            _container = new ContainerVisual();
+            _container.Transform = _transform;
+            _hostVisuals = new VisualCollection(this) { _container };
             ClipToBounds = true;
         }
 
-        protected override int VisualChildrenCount => _visuals.Count;
-        protected override Visual GetVisualChild(int index) => _visuals[index];
+        // FrameworkElement needs these to expose visual children
+        protected override int VisualChildrenCount => _hostVisuals.Count;
+        protected override Visual GetVisualChild(int index) => _hostVisuals[index];
+
+        // Background drawn in OnRender — not affected by _transform
+        protected override void OnRender(DrawingContext dc)
+        {
+            dc.DrawRectangle(Background ?? Brushes.Transparent, null,
+                new Rect(0, 0, ActualWidth, ActualHeight));
+        }
 
         public void Render(IReadOnlyList<MapDot>? dots)
         {
-            _visuals.Clear();
+            _container.Children.Clear();
             _hitBoxes.Clear();
-            HoveredDot = null;
 
             if (dots == null || dots.Count == 0) return;
 
@@ -95,9 +117,8 @@ namespace ImageClusterizer
                     dc.Pop();
                     dc.DrawEllipse(null, borderPen, center, dot.Radius, dot.Radius);
                 }
-
                 visual.Transform = new TranslateTransform(dot.X - dot.Radius, dot.Y - dot.Radius);
-                _visuals.Add(visual);
+                _container.Children.Add(visual);
                 _hitBoxes.Add((new Rect(dot.X - dot.Radius, dot.Y - dot.Radius, d, d), dot));
             }
         }
@@ -110,13 +131,16 @@ namespace ImageClusterizer
 
         public Matrix GetMatrix() => _matrix;
 
+        /// <summary>
+        /// Maps a screen-space point (from mouse) to canvas space and returns the
+        /// topmost dot hit, or null.
+        /// </summary>
         public MapDot? HitTest(Point screenPoint)
         {
             if (!_matrix.HasInverse) return null;
             var inv = _matrix;
             inv.Invert();
             var canvas = inv.Transform(screenPoint);
-
             for (int i = _hitBoxes.Count - 1; i >= 0; i--)
             {
                 var (_, dot) = _hitBoxes[i];
@@ -128,6 +152,9 @@ namespace ImageClusterizer
             return null;
         }
 
+        /// <summary>
+        /// Cycles the dot to bottom or top Z-order within the canvas container.
+        /// </summary>
         public void CycleZOrder(MapDot dot)
         {
             int idx = -1;
@@ -135,26 +162,23 @@ namespace ImageClusterizer
                 if (_hitBoxes[i].dot == dot) { idx = i; break; }
             if (idx < 0) return;
 
-            var vis = _visuals[idx];
+            var vis = (DrawingVisual)_container.Children[idx];
             var hb = _hitBoxes[idx];
-            bool wasTop = idx == _visuals.Count - 1;
+            bool wasTop = idx == _container.Children.Count - 1;
 
-            _visuals.RemoveAt(idx);
+            _container.Children.RemoveAt(idx);
             _hitBoxes.RemoveAt(idx);
 
-            if (wasTop) { _visuals.Insert(0, vis); _hitBoxes.Insert(0, hb); }
-            else { _visuals.Add(vis); _hitBoxes.Add(hb); }
+            if (wasTop)
+            {
+                _container.Children.Insert(0, vis);
+                _hitBoxes.Insert(0, hb);
+            }
+            else
+            {
+                _container.Children.Add(vis);
+                _hitBoxes.Add(hb);
+            }
         }
-    }
-
-    /// <summary>Lightweight dot data: position, radius, file info.</summary>
-    public class MapDot
-    {
-        public double X { get; init; }
-        public double Y { get; init; }
-        public double Radius { get; init; } = 14.0;
-        public string FilePath { get; init; } = "";
-        public string ThumbnailPath { get; init; } = "";
-        public long FileSize { get; init; }
     }
 }
