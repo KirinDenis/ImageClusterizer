@@ -15,6 +15,7 @@ namespace ImageClusterizer
     /// </summary>
     public class MapRenderCanvas : FrameworkElement
     {
+        // ---- Items DP ----
         public static readonly DependencyProperty ItemsProperty =
             DependencyProperty.Register(nameof(Items), typeof(IReadOnlyList<MapDot>), typeof(MapRenderCanvas),
                 new FrameworkPropertyMetadata(null, OnItemsChanged));
@@ -31,7 +32,20 @@ namespace ImageClusterizer
                 c.Render(e.NewValue as IReadOnlyList<MapDot>);
         }
 
+        // ---- Background DP (like Panel/Control) ----
+        public static readonly DependencyProperty BackgroundProperty =
+            DependencyProperty.Register(nameof(Background), typeof(Brush), typeof(MapRenderCanvas),
+                new FrameworkPropertyMetadata(Brushes.Transparent,
+                    FrameworkPropertyMetadataOptions.AffectsRender));
+
+        public Brush Background
+        {
+            get => (Brush)GetValue(BackgroundProperty);
+            set => SetValue(BackgroundProperty, value);
+        }
+
         private readonly VisualCollection _visuals;
+        private readonly DrawingVisual _backgroundVisual = new DrawingVisual();
         private MatrixTransform _transform = new MatrixTransform();
         private Matrix _matrix = Matrix.Identity;
         private readonly List<(Rect bounds, MapDot dot)> _hitBoxes = new();
@@ -39,6 +53,7 @@ namespace ImageClusterizer
         public MapRenderCanvas()
         {
             _visuals = new VisualCollection(this);
+            _visuals.Add(_backgroundVisual); // index 0 = background, always behind dots
             RenderTransform = _transform;
             ClipToBounds = true;
         }
@@ -46,10 +61,28 @@ namespace ImageClusterizer
         protected override int VisualChildrenCount => _visuals.Count;
         protected override Visual GetVisualChild(int index) => _visuals[index];
 
+        protected override void OnRenderSizeChanged(SizeChangedInfo sizeInfo)
+        {
+            base.OnRenderSizeChanged(sizeInfo);
+            DrawBackground();
+        }
+
+        private void DrawBackground()
+        {
+            using var dc = _backgroundVisual.RenderOpen();
+            // Draw background that is NOT affected by the canvas transform
+            // We use the inverse transform to always fill the viewport
+            dc.DrawRectangle(Background ?? Brushes.Transparent, null,
+                new Rect(0, 0, ActualWidth, ActualHeight));
+        }
+
         public void Render(IReadOnlyList<MapDot>? dots)
         {
-            _visuals.Clear();
+            // Remove all except background (index 0)
+            while (_visuals.Count > 1)
+                _visuals.RemoveAt(1);
             _hitBoxes.Clear();
+
             if (dots == null || dots.Count == 0) return;
 
             var borderPen = new Pen(new SolidColorBrush(Color.FromArgb(120, 100, 100, 100)), 0.8);
@@ -97,6 +130,7 @@ namespace ImageClusterizer
         {
             _matrix = m;
             _transform.Matrix = m;
+            DrawBackground(); // redraw background so it always covers the viewport
         }
 
         public Matrix GetMatrix() => _matrix;
@@ -120,19 +154,23 @@ namespace ImageClusterizer
 
         public void CycleZOrder(MapDot dot)
         {
+            // Find dot among visuals (offset by 1 for background)
             int idx = -1;
             for (int i = 0; i < _hitBoxes.Count; i++)
                 if (_hitBoxes[i].dot == dot) { idx = i; break; }
             if (idx < 0) return;
 
-            var vis = _visuals[idx];
+            int visIdx = idx + 1; // +1 because index 0 is background
+            var vis = _visuals[visIdx];
             var hb = _hitBoxes[idx];
-            bool wasTop = idx == _visuals.Count - 1;
-            _visuals.RemoveAt(idx);
+            bool wasTop = visIdx == _visuals.Count - 1;
+
+            _visuals.RemoveAt(visIdx);
             _hitBoxes.RemoveAt(idx);
+
             if (wasTop)
             {
-                _visuals.Insert(0, vis);
+                _visuals.Insert(1, vis); // after background
                 _hitBoxes.Insert(0, hb);
             }
             else
