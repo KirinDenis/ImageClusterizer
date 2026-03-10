@@ -3,7 +3,6 @@
 > **AI-powered desktop application for organizing large image collections by visual similarity.**
 
 <img width="1182" height="250" alt="image" src="https://github.com/KirinDenis/ImageClusterizer/blob/main/Screen/logo.png" />
----
 
 ## What Is This?
 
