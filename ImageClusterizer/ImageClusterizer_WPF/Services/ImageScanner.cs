@@ -22,7 +22,7 @@ public class ImageScanner
     private readonly IVectorService vectorService;
     private readonly StorageService storageService;
 
-    private const int ThumbnailSize   = 224;
+    private const int ThumbnailSize    = 224;
     private const int ThumbnailQuality = 85;
 
     public ImageScanner(
@@ -39,67 +39,86 @@ public class ImageScanner
     /// Scans a folder for images, extracts vectors, saves thumbnails and persists to database.
     /// Uses Channel-based producer/consumer pattern for parallel batch processing.
     /// Thumbnails (224x224 JPEG) are saved to the thumbnails cache folder during scan.
+    ///
+    /// Progress protocol:
+    ///   TotalCount == -1  -> folder enumeration in progress (IsFolderScanning hint for UX)
+    ///   TotalCount ==  0  -> enumeration done, no new images found
+    ///   TotalCount  >  0  -> normal scan progress
     /// </summary>
     public async IAsyncEnumerable<ScanProgress> ScanFolderAsync(
         string folder,
         VectorType vectorType = VectorType.Embedding,
         [EnumeratorCancellation] CancellationToken ct = default)
     {
-        List<string> imageFiles = null;
+        // ---- Phase 0: signal UX that we are enumerating the folder (may be slow on large drives) ----
+        yield return new ScanProgress
+        {
+            CurrentFile    = folder,
+            ProcessedCount = 0,
+            TotalCount     = -1  // sentinel: folder enumeration in progress
+        };
 
+        // ---- Phase 1: enumerate files on a background thread (avoids UI freeze) ----
+        List<string> imageFiles = new();
         try
         {
-            EnumerationOptions options = new EnumerationOptions
+            imageFiles = await Task.Run(() =>
             {
-                IgnoreInaccessible       = true,
-                RecurseSubdirectories    = true,
-                AttributesToSkip         = FileAttributes.System | FileAttributes.Hidden,
-                ReturnSpecialDirectories = false
-            };
-
-            imageFiles = Directory.EnumerateFiles(folder, "*.*", options)
-                .Where(f => Utility.IsImageFile(f))
-                .ToList();
+                var options = new EnumerationOptions
+                {
+                    IgnoreInaccessible       = true,
+                    RecurseSubdirectories    = true,
+                    AttributesToSkip         = FileAttributes.System | FileAttributes.Hidden,
+                    ReturnSpecialDirectories = false
+                };
+                return Directory.EnumerateFiles(folder, "*.*", options)
+                    .Where(f => Utility.IsImageFile(f))
+                    .ToList();
+            }, ct);
         }
         catch (Exception e)
         {
-            // User may not have access rights to selected folder or subfolder
             Debug.WriteLine($"Can't open selected folder: {e.Message}");
         }
 
-        int totalCount     = imageFiles?.Count ?? 0;
+        int totalCount     = imageFiles.Count;
         int processedCount = 0;
 
-        // Bounded channel: prevents unbounded memory growth when producer is faster than consumers
+        if (totalCount == 0)
+        {
+            yield return new ScanProgress
+            {
+                CurrentFile    = folder,
+                ProcessedCount = 0,
+                TotalCount     = 0
+            };
+            yield break;
+        }
+
+        // ---- Phase 2: process images via bounded channel ----
         var fileChannel = Channel.CreateBounded<string>(
             new BoundedChannelOptions(Environment.ProcessorCount * 2)
             {
                 FullMode = BoundedChannelFullMode.Wait
             });
 
-        // Unbounded channel for lazy return of progress updates via yield return
         var progressChannel = Channel.CreateUnbounded<ScanProgress>();
 
-        // Producer: writes image file paths into fileChannel one by one
         var producer = Task.Run(async () =>
         {
-            foreach (var imageFile in imageFiles ?? new List<string>())
+            foreach (var imageFile in imageFiles)
             {
                 if (ct.IsCancellationRequested) break;
-
-                // Skip files already in the database
                 if (await vectorDatabase.ExistsAsync(imageFile))
                 {
                     Interlocked.Increment(ref processedCount);
                     continue;
                 }
-
                 await fileChannel.Writer.WriteAsync(imageFile);
             }
             fileChannel.Writer.Complete();
         }, ct);
 
-        // Consumers: process images in parallel using ProcessorCount tasks
         var consumers = Enumerable.Range(0, Environment.ProcessorCount)
             .Select(_ => Task.Run(async () =>
             {
@@ -108,18 +127,13 @@ public class ImageScanner
                     try
                     {
                         string? thumbnailPath = null;
-
-                        // Load image once, preprocess to 224x224 for both ONNX and thumbnail
                         using (var image = Image.Load<Rgb24>(imageFile))
                         {
-                            // Resize to 224x224 (same as ONNX preprocessing)
                             image.Mutate(x => x.Resize(new ResizeOptions
                             {
                                 Size = new Size(ThumbnailSize, ThumbnailSize),
                                 Mode = ResizeMode.Crop
                             }));
-
-                            // Save thumbnail if it does not already exist
                             var thumbPath = storageService.GetThumbnailPath(imageFile);
                             if (!File.Exists(thumbPath))
                             {
@@ -129,9 +143,7 @@ public class ImageScanner
                             thumbnailPath = thumbPath;
                         }
 
-                        // Extract feature vector using CNN (ResNet50)
                         var vector = await vectorService.GetEmbeddingAsync(imageFile, vectorType);
-
                         var imageVector = new ImageVector
                         {
                             FilePath      = imageFile,
@@ -141,8 +153,6 @@ public class ImageScanner
                             FileSize      = new FileInfo(imageFile).Length,
                             ThumbnailPath = thumbnailPath
                         };
-
-                        // Persist to database
                         await vectorDatabase.SaveAsync(imageVector);
 
                         var count = Interlocked.Increment(ref processedCount);
@@ -156,21 +166,18 @@ public class ImageScanner
                     }
                     catch (Exception ex)
                     {
-                        // TODO: store failed files and allow retry
                         Debug.WriteLine($"Error processing {imageFile}: {ex.Message}");
                     }
                 }
             }, ct))
             .ToArray();
 
-        // Wait for all consumers, then close progress channel
         var completionTask = Task.Run(async () =>
         {
             await Task.WhenAll(consumers);
             progressChannel.Writer.Complete();
         });
 
-        // Lazily yield progress updates back to the caller
         await foreach (var progress in progressChannel.Reader.ReadAllAsync(ct))
         {
             yield return progress;

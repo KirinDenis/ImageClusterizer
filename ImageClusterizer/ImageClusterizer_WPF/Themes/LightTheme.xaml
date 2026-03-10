@@ -1,37 +1,39 @@
-<ResourceDictionary
-    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
-
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <!-- ===== LIGHT THEME ===== -->
 
     <!-- Main backgrounds -->
-    <SolidColorBrush x:Key="AppBackground"       Color="#F3F3F3"/>
-    <SolidColorBrush x:Key="AppSurface"          Color="#FFFFFF"/>
-    <SolidColorBrush x:Key="AppBorder"           Color="#CCCCCC"/>
+    <SolidColorBrush x:Key="AppBackground"     Color="#F3F3F3"/>
+    <SolidColorBrush x:Key="AppSurface"        Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="AppBorder"         Color="#CCCCCC"/>
 
     <!-- Text -->
-    <SolidColorBrush x:Key="AppText"             Color="#1E1E1E"/>
-    <SolidColorBrush x:Key="AppTextSecondary"    Color="#717171"/>
+    <SolidColorBrush x:Key="AppText"           Color="#1E1E1E"/>
+    <SolidColorBrush x:Key="AppTextSecondary"  Color="#717171"/>
 
     <!-- Accent -->
-    <SolidColorBrush x:Key="AppAccent"           Color="#0078D4"/>
-    <SolidColorBrush x:Key="AppAccentHover"      Color="#106EBE"/>
+    <SolidColorBrush x:Key="AppAccent"         Color="#0078D4"/>
+    <SolidColorBrush x:Key="AppAccentHover"    Color="#106EBE"/>
 
     <!-- Bars -->
-    <SolidColorBrush x:Key="ToolBarBackground"   Color="#F0F0F0"/>
+    <SolidColorBrush x:Key="ToolBarBackground" Color="#F0F0F0"/>
+    <SolidColorBrush x:Key="ToolBarForeground" Color="#1E1E1E"/>
     <SolidColorBrush x:Key="StatusBarBackground" Color="#0078D4"/>
 
     <!-- Console panel -->
-    <SolidColorBrush x:Key="ConsoleBackground"   Color="#1E1E1E"/>
-    <SolidColorBrush x:Key="ConsoleForeground"   Color="#4EC94E"/>
+    <SolidColorBrush x:Key="ConsoleBackground" Color="#1E1E1E"/>
+    <SolidColorBrush x:Key="ConsoleForeground" Color="#4EC94E"/>
 
     <!-- LED indicators -->
-    <SolidColorBrush x:Key="IndicatorActive"     Color="#00C853"/>
-    <SolidColorBrush x:Key="IndicatorInactive"   Color="#BDBDBD"/>
-    <SolidColorBrush x:Key="IndicatorWarning"    Color="#FF8F00"/>
+    <SolidColorBrush x:Key="IndicatorActive"   Color="#00C853"/>
+    <SolidColorBrush x:Key="IndicatorInactive" Color="#BDBDBD"/>
+    <SolidColorBrush x:Key="IndicatorWarning"  Color="#FF8F00"/>
 
     <!-- Cockpit panel -->
     <SolidColorBrush x:Key="CockpitBackground"   Color="#EBEBEB"/>
     <SolidColorBrush x:Key="CockpitGroupBorder"  Color="#CCCCCC"/>
 
+    <!-- Welcome hint overlay -->
+    <SolidColorBrush x:Key="WelcomeHintBackground" Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="WelcomeHintBorder"     Color="#0078D4"/>
 </ResourceDictionary>
