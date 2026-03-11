@@ -1,6 +1,6 @@
 <div align="center">
 
-🇬🇧 [English](#english)  |  🇺🇦 [Українська](#ukrainian)  |  📖 [Wiki](https://github.com/KirinDenis/ImageClusterizer/wiki)  |  📥 [Download Release](https://github.com/KirinDenis/ImageClusterizer/releases)
+<a href="#english"><img src="https://raw.githubusercontent.com/twitter/twemoji/master/assets/svg/1f1ec-1f1e7.svg" width="20" height="20" alt="EN"/> English</a>  |  <a href="#ukrainian"><img src="https://raw.githubusercontent.com/twitter/twemoji/master/assets/svg/1f1fa-1f1e6.svg" width="20" height="20" alt="UA"/> Українська</a>  |  <a href="https://github.com/KirinDenis/ImageClusterizer/wiki">📖 Wiki</a>  |  <a href="https://github.com/KirinDenis/ImageClusterizer/releases">📥 Download Release</a>
 
 </div>
 
