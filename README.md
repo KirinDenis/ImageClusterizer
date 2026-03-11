@@ -8,7 +8,7 @@
 
 <a id="english"></a>
 
-# 🇬🇧 AI :: Image Clusterizer
+# AI :: Image Clusterizer
 
 > **AI-powered desktop application for organizing large image collections by visual similarity.**
 
@@ -154,7 +154,7 @@ MIT — see [LICENSE](LICENSE).
 
 <a id="ukrainian"></a>
 
-# 🇺🇦 AI :: Image Clusterizer
+# AI :: Image Clusterizer
 
 > **Десктопний застосунок на базі штучного інтелекту для організації великих колекцій зображень за візуальною схожістю.**
 
