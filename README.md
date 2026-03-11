@@ -12,11 +12,7 @@
 
 # 🇬🇧 AI :: Image Clusterizer
 
-# AI :: Image Clusterizer
-
 > **AI-powered desktop application for organizing large image collections by visual similarity.**
-
-
 
 ## What Is This?
 
